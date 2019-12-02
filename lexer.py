@@ -62,7 +62,8 @@ class Lexer:
 
     # Variable tokens
     'ID',
-    'NUMBER',
+    'NUMBER_INT',
+    'NUMBER_FLOAT',
     'STRING',
     'CHARACTER',
   )
@@ -119,8 +120,12 @@ class Lexer:
     t.type = self.reserved.get(t.value, 'ID')
     return t
 
-  def t_NUMBER(self, t):
-    r'(([1-9]\d*)|0(?!\d))(.\d*[1-9])?'
+  def t_NUMBER_FLOAT(self, t):
+    r'(([1-9]\d*)|0(?!\d))(.\d*[1-9])'
+    return t
+
+  def t_NUMBER_INT(self, t):
+    r'(([1-9]\d*)|0(?!\d))'
     return t
 
   def t_CHARACTER(self, t):
