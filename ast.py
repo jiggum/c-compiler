@@ -1,6 +1,7 @@
 class Node():
-  def __init__(self, child=None):
+  def __init__(self, child=None, lineno=None):
     self.childs = []
+    self.lineno = lineno
     if child != None:
       self.childs.append(child)
 
@@ -14,7 +15,7 @@ class Node():
     return False
 
   def __str__(self, level=0, infos={}):
-    ret = "\t"*level+self.__class__.__name__ + infos.__str__() + '\n'
+    ret = "\t"*level + str(self.lineno) + ':' + self.__class__.__name__ + infos.__str__() + '\n'
     for child in self.childs:
         ret += child.__str__(level+1)
     return ret
@@ -27,8 +28,8 @@ class EmptyNode(Node):
     return True
 
 class TypeNode(Node):
-  def __init__(self, type=None):
-    super().__init__()
+  def __init__(self, type=None, lineno=None):
+    super().__init__(lineno=lineno)
     self.types = []
     if (type is not None):
       self.add_type(type)
@@ -47,8 +48,8 @@ class TypeNode(Node):
     return super().__str__(level, infos_)
 
 class Const(Node):
-  def __init__(self, value):
-    super().__init__()
+  def __init__(self, value, lineno=None):
+    super().__init__(lineno=lineno)
     self.value = value
 
   def __str__(self, level=0, infos={}):
@@ -63,8 +64,8 @@ class Section(Node):
   pass
 
 class Declaration(Node):
-  def __init__(self, declarator):
-    super().__init__()
+  def __init__(self, declarator, lineno=None):
+    super().__init__(lineno=lineno)
     self.type = declarator.type
     self.name = declarator.name
 
@@ -77,8 +78,8 @@ class Declaration(Node):
     return ret
 
 class FnDeclaration(Declaration):
-  def __init__(self, declarator, body):
-    super().__init__(declarator)
+  def __init__(self, declarator, body, lineno=None):
+    super().__init__(declarator, lineno=lineno)
     self.parameterGroup = declarator.parameterGroup
     self.body = body
 
@@ -96,8 +97,8 @@ class VaDeclationList(Node):
   pass
 
 class Declarator(Node):
-  def __init__(self, name):
-    super().__init__()
+  def __init__(self, name, lineno=None):
+    super().__init__(lineno=lineno)
     self.type = None
     self.name = name
 
@@ -115,8 +116,8 @@ class Declarator(Node):
     return ret
 
 class FnDeclarator(Declarator):
-  def __init__(self, name, parameterGroup=None):
-    super().__init__(name)
+  def __init__(self, name, parameterGroup=None, lineno=None):
+    super().__init__(name, lineno=lineno)
     self.parameterGroup = parameterGroup
 
   def __str__(self, level=0, infos={}):
@@ -128,8 +129,8 @@ class VaDeclarator(Declarator):
   pass
 
 class ArrayDeclarator(Declarator):
-  def __init__(self, name, size):
-    super().__init__(name)
+  def __init__(self, name, size, lineno=None):
+    super().__init__(name, lineno=lineno)
     self.size = size
 
   def __str__(self, level=0, infos={}):
@@ -141,8 +142,8 @@ class ParameterGroup(Node):
   pass
 
 class ConditionalStatement(Node):
-  def __init__(self, expr, then_section, else_section):
-    super().__init__()
+  def __init__(self, expr, then_section, else_section, lineno=None):
+    super().__init__(lineno=lineno)
     self.expr = expr
     self.then_section = then_section
     self.else_section = else_section
@@ -155,8 +156,8 @@ class ConditionalStatement(Node):
     return ret
 
 class LoopStatement(Node):
-  def __init__(self, expr, section):
-    super().__init__()
+  def __init__(self, expr, section, lineno=None):
+    super().__init__(lineno=lineno)
     self.expr = expr
     self.section = section
 
@@ -170,8 +171,8 @@ class While(LoopStatement):
   pass
 
 class For(LoopStatement):
-  def __init__(self, init_stmt, expr, term_stmt, section):
-    super().__init__(expr, section)
+  def __init__(self, init_stmt, expr, term_stmt, section, lineno=None):
+    super().__init__(expr, section, lineno=lineno)
     self.init_stmt = init_stmt
     self.term_stmt = term_stmt
 
@@ -185,8 +186,8 @@ class JumpStatement(Node):
   pass
 
 class Return(JumpStatement):
-  def __init__(self, expr):
-    super().__init__()
+  def __init__(self, expr, lineno=None):
+    super().__init__(lineno=lineno)
     self.expr = expr
 
   def __str__(self, level=0, infos={}):
@@ -204,8 +205,8 @@ class ArgumentList(Node):
   pass
 
 class BinaryOp(Node):
-  def __init__(self, op, left, right):
-    super().__init__()
+  def __init__(self, op, left, right, lineno=None):
+    super().__init__(lineno=lineno)
     self.left = left
     self.right = right
     self.op = op
@@ -222,8 +223,8 @@ class AssignOp(BinaryOp):
   pass
 
 class UnaryOp(Node):
-  def __init__(self, op, expr):
-    super().__init__()
+  def __init__(self, op, expr, lineno=None):
+    super().__init__(lineno=lineno)
     self.expr = expr
     self.op = op
 
@@ -235,8 +236,8 @@ class UnaryOp(Node):
     return ret
 
 class FnExpression(Node):
-  def __init__(self, expr, arguments):
-    super().__init__()
+  def __init__(self, expr, arguments, lineno=None):
+    super().__init__(lineno=lineno)
     self.expr = expr
     self.arguments = arguments
 
@@ -247,8 +248,8 @@ class FnExpression(Node):
     return ret
 
 class VaExpression(Node):
-  def __init__(self, name):
-    super().__init__()
+  def __init__(self, name, lineno=None):
+    super().__init__(lineno=lineno)
     self.name = name
     self.pointer = None
 
@@ -261,8 +262,8 @@ class VaExpression(Node):
     return super().__str__(level, infos_)
 
 class ArrayExpression(Node):
-  def __init__(self, expr, index):
-    super().__init__()
+  def __init__(self, expr, index, lineno=None):
+    super().__init__(lineno=lineno)
     self.expr = expr
     self.index = index
 
