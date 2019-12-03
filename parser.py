@@ -113,12 +113,12 @@ class Parser(Lexer):
 
   def p_function_simple_declarator_1(self, t):
     '''function_simple_declarator : ID PAREN_L parameter_group PAREN_R'''
-    t[0] = ast.FnDeclarator(t[0], t[1])
+    t[0] = ast.FnDeclarator(t[1], t[3])
 
   def p_function_simple_declarator_2(self, t):
     '''function_simple_declarator : ID PAREN_L PAREN_R
                                   | ID PAREN_L VOID PAREN_R'''
-    t[0] = ast.FnDeclarator(t[0])
+    t[0] = ast.FnDeclarator(t[1], ast.EmptyNode())
 
   def p_variable_declaration(self, t):
     '''variable_declaration : type variable_declarator_group SEMICOLON'''

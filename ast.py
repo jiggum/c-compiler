@@ -13,6 +13,12 @@ class Node():
   def is_empty(self):
     return False
 
+  def __str__(self, level=0, infos={}):
+    ret = "\t"*level+self.__class__.__name__ + infos.__str__() + '\n'
+    for child in self.childs:
+        ret += child.__str__(level+1)
+    return ret
+
 class EmptyNode(Node):
   def __init__(self):
     super().__init__()
@@ -35,10 +41,20 @@ class TypeNode(Node):
   def add_type(self, type):
     self.types.append(type)
 
+  def __str__(self, level=0, infos={}):
+    infos_ = {'types': self.types}
+    infos_.update(infos)
+    return super().__str__(level, infos_)
+
 class Const(Node):
   def __init__(self, value):
     super().__init__()
     self.value = value
+
+  def __str__(self, level=0, infos={}):
+    infos_ = {'value': self.value}
+    infos_.update(infos)
+    return super().__str__(level, infos_)
 
 class RootSection(Node):
   pass
@@ -52,10 +68,26 @@ class Declaration(Node):
     self.type = declarator.type
     self.name = declarator.name
 
+
+  def __str__(self, level=0, infos={}):
+    infos_ = {'name': self.name}
+    infos_.update(infos)
+    ret = super().__str__(level, infos_)
+    ret += self.type.__str__(level+1)
+    return ret
+
 class FnDeclaration(Declaration):
   def __init__(self, declarator, body):
     super().__init__(declarator)
+    self.parameterGroup = declarator.parameterGroup
     self.body = body
+
+
+  def __str__(self, level=0, infos={}):
+    ret = super().__str__(level, infos)
+    ret += self.parameterGroup.__str__(level+1)
+    ret += self.body.__str__(level+1)
+    return ret
 
 class VaDeclartion(Declaration):
   pass
@@ -75,10 +107,22 @@ class Declarator(Node):
     else:
       self.type.add_type(typeNode.get_type())
 
+  def __str__(self, level=0, infos={}):
+    infos_ = {'name': self.name}
+    infos_.update(infos)
+    ret = super().__str__(level, infos_)
+    ret += self.type.__str__(level+1)
+    return ret
+
 class FnDeclarator(Declarator):
   def __init__(self, name, parameterGroup=None):
     super().__init__(name)
     self.parameterGroup = parameterGroup
+
+  def __str__(self, level=0, infos={}):
+    ret = super().__str__(level, infos)
+    ret += self.parameterGroup.__str__(level+1)
+    return ret
 
 class VaDeclarator(Declarator):
   pass
@@ -87,6 +131,11 @@ class ArrayDeclarator(Declarator):
   def __init__(self, name, size):
     super().__init__(name)
     self.size = size
+
+  def __str__(self, level=0, infos={}):
+    infos_ = {'size': self.size}
+    infos_.update(infos)
+    return super().__str__(level, infos_)
 
 class ParameterGroup(Node):
   pass
@@ -98,11 +147,24 @@ class ConditionalStatement(Node):
     self.then_section = then_section
     self.else_section = else_section
 
+  def __str__(self, level=0, infos={}):
+    ret = super().__str__(level, infos)
+    ret += self.expr.__str__(level+1)
+    ret += self.then_section.__str__(level+1)
+    ret += self.else_section.__str__(level+1)
+    return ret
+
 class LoopStatement(Node):
   def __init__(self, expr, section):
     super().__init__()
     self.expr = expr
     self.section = section
+
+  def __str__(self, level=0, infos={}):
+    ret = super().__str__(level, infos)
+    ret += self.expr.__str__(level+1)
+    ret += self.section.__str__(level+1)
+    return ret
 
 class While(LoopStatement):
   pass
@@ -113,6 +175,12 @@ class For(LoopStatement):
     self.init_stmt = init_stmt
     self.term_stmt = term_stmt
 
+  def __str__(self, level=0, infos={}):
+    ret = super().__str__(level, infos)
+    ret += self.init_stmt.__str__(level+1)
+    ret += self.term_stmt.__str__(level+1)
+    return ret
+
 class JumpStatement(Node):
   pass
 
@@ -120,6 +188,11 @@ class Return(JumpStatement):
   def __init__(self, expr):
     super().__init__()
     self.expr = expr
+
+  def __str__(self, level=0, infos={}):
+    ret = super().__str__(level, infos)
+    ret += self.expr.__str__(level+1)
+    return ret
 
 class Break(JumpStatement):
   pass
@@ -137,6 +210,14 @@ class BinaryOp(Node):
     self.right = right
     self.op = op
 
+  def __str__(self, level=0, infos={}):
+    infos_ = {'op': self.op}
+    infos_.update(infos)
+    ret = super().__str__(level, infos_)
+    ret += self.left.__str__(level+1)
+    ret += self.right.__str__(level+1)
+    return ret
+
 class AssignOp(BinaryOp):
   pass
 
@@ -146,11 +227,24 @@ class UnaryOp(Node):
     self.expr = expr
     self.op = op
 
+  def __str__(self, level=0, infos={}):
+    infos_ = {'op': self.op}
+    infos_.update(infos)
+    ret = super().__str__(level, infos_)
+    ret += self.expr.__str__(level+1)
+    return ret
+
 class FnExpression(Node):
   def __init__(self, expr, arguments):
     super().__init__()
     self.expr = expr
     self.arguments = arguments
+
+  def __str__(self, level=0, infos={}):
+    ret = super().__str__(level, infos)
+    ret += self.arguments.__str__(level+1)
+    ret += self.expr.__str__(level+1)
+    return ret
 
 class VaExpression(Node):
   def __init__(self, name):
@@ -161,9 +255,20 @@ class VaExpression(Node):
   def set_pointer(self, type):
     self.pointer = type
 
+  def __str__(self, level=0, infos={}):
+    infos_ = {'name': self.name, 'pointer': self.pointer}
+    infos_.update(infos)
+    return super().__str__(level, infos_)
+
 class ArrayExpression(Node):
   def __init__(self, expr, index):
     super().__init__()
     self.expr = expr
     self.index = index
+
+  def __str__(self, level=0, infos={}):
+    ret = super().__str__(level, infos)
+    ret += self.index.__str__(level+1)
+    ret += self.expr.__str__(level+1)
+    return ret
 
