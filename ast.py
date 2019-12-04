@@ -1,13 +1,13 @@
 import symbol_table as st
 
 class Node():
-  def __init__(self, lineno=None):
-    self.lineno = lineno
+  def __init__(self, linespan=None):
+    self.linespan = linespan
     self.parent = None
     self.callstack = None
     self.scope = None
     self.current_line = None
-    self.section_lineno = None
+    self.section_linespan = None
 
   def is_empty(self):
     return False
@@ -21,11 +21,14 @@ class Node():
   def get_current_line(self):
     return self.parent.get_current_line()
 
+  def get_section_linespan(self):
+    return self.parent.get_section_linespan()
+
   def update_current_line(self, line):
     self.parent.update_current_line(line)
 
-  def get_section_lineno(self):
-    return self.parent.get_section_lineno()
+  def update_linespan(self, linespan):
+    self.linespan = linespan
 
   def push_callstack(self, node):
     return self.parent.push_callstack(node)
@@ -34,12 +37,12 @@ class Node():
     return self.parent.pop_callstack()
 
   def __str__(self, level=0, infos={}):
-    ret = "\t"*level + str(self.lineno) + ':' + self.__class__.__name__ + infos.__str__() + '\n'
+    ret = "\t"*level + str(self.linespan) + ':' + self.__class__.__name__ + infos.__str__() + '\n'
     return ret
 
 class ArrayNode(Node):
-  def __init__(self, child=None, lineno=None):
-    super().__init__(lineno=lineno)
+  def __init__(self, child=None, linespan=None):
+    super().__init__(linespan=linespan)
     self.childs = []
     if child != None:
       child.parent = self
@@ -62,8 +65,8 @@ class EmptyNode(Node):
     return True
 
 class TypeNode(Node):
-  def __init__(self, type=None, lineno=None):
-    super().__init__(lineno=lineno)
+  def __init__(self, type=None, linespan=None):
+    super().__init__(linespan=linespan)
     self.types = []
     if (type is not None):
       self.add_type(type)
@@ -82,8 +85,8 @@ class TypeNode(Node):
     return super().__str__(level, infos_)
 
 class Const(Node):
-  def __init__(self, value, lineno=None):
-    super().__init__(lineno=lineno)
+  def __init__(self, value, linespan=None):
+    super().__init__(linespan=linespan)
     self.value = value
 
   def __str__(self, level=0, infos={}):
@@ -92,15 +95,15 @@ class Const(Node):
     return super().__str__(level, infos_)
 
 class BaseSection(ArrayNode):
-  def __init__(self, child=None, lineno=None):
-    super().__init__(child=child, lineno=lineno)
+  def __init__(self, child=None, linespan=None):
+    super().__init__(child=child, linespan=linespan)
     self.current_line = 1
 
   def get_current_line(self):
     return self.current_line
 
-  def get_section_lineno(self):
-    return self.lineno
+  def get_section_linespan(self):
+    return self.linespan
 
   def update_current_line(self, line):
     self.current_line = line
@@ -109,8 +112,8 @@ class BaseSection(ArrayNode):
     return self.callstack.pop()
 
 class RootSection(BaseSection):
-  def __init__(self, child=None, lineno=None):
-    super().__init__(child=child, lineno=lineno)
+  def __init__(self, child=None, linespan=None):
+    super().__init__(child=child, linespan=linespan)
     self.callstack = []
 
   def get_scope(self):
@@ -130,8 +133,8 @@ class Section(BaseSection):
     return self.scope
 
 class Declaration(Node):
-  def __init__(self, declarator, lineno=None):
-    super().__init__(lineno=lineno)
+  def __init__(self, declarator, linespan=None):
+    super().__init__(linespan=linespan)
     self.type = declarator.type
     self.type.parent = self
     self.name = declarator.name
@@ -144,8 +147,8 @@ class Declaration(Node):
     return ret
 
 class FnDeclaration(Declaration):
-  def __init__(self, declarator, body, lineno=None):
-    super().__init__(declarator, lineno=lineno)
+  def __init__(self, declarator, body, linespan=None):
+    super().__init__(declarator, linespan=linespan)
     self.parameterGroup = declarator.parameterGroup
     self.parameterGroup.parent = self
     self.body = body
@@ -165,8 +168,8 @@ class VaDeclationList(ArrayNode):
   pass
 
 class Declarator(Node):
-  def __init__(self, name, lineno=None):
-    super().__init__(lineno=lineno)
+  def __init__(self, name, linespan=None):
+    super().__init__(linespan=linespan)
     self.type = None
     self.name = name
 
@@ -185,8 +188,8 @@ class Declarator(Node):
     return ret
 
 class FnDeclarator(Declarator):
-  def __init__(self, name, parameterGroup=None, lineno=None):
-    super().__init__(name, lineno=lineno)
+  def __init__(self, name, parameterGroup=None, linespan=None):
+    super().__init__(name, linespan=linespan)
     self.parameterGroup = parameterGroup
     self.parameterGroup.parent = self
 
@@ -199,8 +202,8 @@ class VaDeclarator(Declarator):
   pass
 
 class ArrayDeclarator(Declarator):
-  def __init__(self, name, size, lineno=None):
-    super().__init__(name, lineno=lineno)
+  def __init__(self, name, size, linespan=None):
+    super().__init__(name, linespan=linespan)
     self.size = size
 
   def __str__(self, level=0, infos={}):
@@ -212,8 +215,8 @@ class ParameterGroup(ArrayNode):
   pass
 
 class ConditionalStatement(Node):
-  def __init__(self, expr, then_section, else_section, lineno=None):
-    super().__init__(lineno=lineno)
+  def __init__(self, expr, then_section, else_section, linespan=None):
+    super().__init__(linespan=linespan)
     self.expr = expr
     self.expr.parent = self
     self.then_section = then_section
@@ -229,8 +232,8 @@ class ConditionalStatement(Node):
     return ret
 
 class LoopStatement(Node):
-  def __init__(self, expr, section, lineno=None):
-    super().__init__(lineno=lineno)
+  def __init__(self, expr, section, linespan=None):
+    super().__init__(linespan=linespan)
     self.expr = expr
     self.expr.parent = self
     self.section = section
@@ -246,8 +249,8 @@ class While(LoopStatement):
   pass
 
 class For(LoopStatement):
-  def __init__(self, init_stmt, expr, term_stmt, section, lineno=None):
-    super().__init__(expr, section, lineno=lineno)
+  def __init__(self, init_stmt, expr, term_stmt, section, linespan=None):
+    super().__init__(expr, section, linespan=linespan)
     self.init_stmt = init_stmt
     self.init_stmt.parent = self
     self.term_stmt = term_stmt
@@ -263,8 +266,8 @@ class JumpStatement(Node):
   pass
 
 class Return(JumpStatement):
-  def __init__(self, expr, lineno=None):
-    super().__init__(lineno=lineno)
+  def __init__(self, expr, linespan=None):
+    super().__init__(linespan=linespan)
     self.expr = expr
     self.expr.parent = self
 
@@ -283,8 +286,8 @@ class ArgumentList(ArrayNode):
   pass
 
 class BinaryOp(Node):
-  def __init__(self, op, left, right, lineno=None):
-    super().__init__(lineno=lineno)
+  def __init__(self, op, left, right, linespan=None):
+    super().__init__(linespan=linespan)
     self.left = left
     self.left.parent = self
     self.right = right
@@ -303,8 +306,8 @@ class AssignOp(BinaryOp):
   pass
 
 class UnaryOp(Node):
-  def __init__(self, op, expr, lineno=None):
-    super().__init__(lineno=lineno)
+  def __init__(self, op, expr, linespan=None):
+    super().__init__(linespan=linespan)
     self.expr = expr
     self.expr.parent = self
     self.op = op
@@ -317,8 +320,8 @@ class UnaryOp(Node):
     return ret
 
 class FnExpression(Node):
-  def __init__(self, expr, arguments, lineno=None):
-    super().__init__(lineno=lineno)
+  def __init__(self, expr, arguments, linespan=None):
+    super().__init__(linespan=linespan)
     self.expr = expr
     self.expr.parent = self
     self.arguments = arguments
@@ -331,8 +334,8 @@ class FnExpression(Node):
     return ret
 
 class VaExpression(Node):
-  def __init__(self, name, lineno=None):
-    super().__init__(lineno=lineno)
+  def __init__(self, name, linespan=None):
+    super().__init__(linespan=linespan)
     self.name = name
     self.pointer = None
 
@@ -345,8 +348,8 @@ class VaExpression(Node):
     return super().__str__(level, infos_)
 
 class ArrayExpression(Node):
-  def __init__(self, expr, index, lineno=None):
-    super().__init__(lineno=lineno)
+  def __init__(self, expr, index, linespan=None):
+    super().__init__(linespan=linespan)
     self.expr = expr
     self.expr.parent = self
     self.index = index
