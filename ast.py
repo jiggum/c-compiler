@@ -4,8 +4,14 @@ class Node():
   def __init__(self, linespan=None):
     self.linespan = linespan
     self.parent = None
+    self.visited = False
+    self.terminated = False
+    self.result = None
 
   def accept(self, visitor):
+    if (self.terminated):
+      return self.terminated, self.result, None
+    self.visited = True
     return getVisitorFunc(visitor, self.__class__)(self)
 
   def is_empty(self):
