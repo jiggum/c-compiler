@@ -1,27 +1,15 @@
-import symbol_table as st
 from helper import getVisitorFunc
 
 class Node():
   def __init__(self, linespan=None):
     self.linespan = linespan
     self.parent = None
-    self.current_line = None
-    self.section_linespan = None
 
   def accept(self, visitor):
     return getVisitorFunc(visitor, self.__class__)(self)
 
   def is_empty(self):
     return False
-
-  def get_current_line(self):
-    return self.parent.get_current_line()
-
-  def get_section_linespan(self):
-    return self.parent.get_section_linespan()
-
-  def update_current_line(self, line=1):
-    self.parent.update_current_line(line)
 
   def update_linespan(self, linespan):
     self.linespan = linespan
@@ -63,18 +51,7 @@ class Const(Node):
     self.value = value
 
 class BaseSection(ArrayNode):
-  def __init__(self, child=None, linespan=None):
-    super().__init__(child=child, linespan=linespan)
-    self.current_line = 1
-
-  def get_current_line(self):
-    return self.current_line
-
-  def get_section_linespan(self):
-    return self.linespan
-
-  def update_current_line(self, line=1):
-    self.current_line = line
+  pass
 
 class RootSection(BaseSection):
   pass
