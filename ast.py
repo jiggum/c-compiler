@@ -5,18 +5,14 @@ class Node():
   def __init__(self, linespan=None):
     self.linespan = linespan
     self.parent = None
-    self.scope = None
     self.current_line = None
     self.section_linespan = None
 
   def accept(self, visitor):
-    getVisitorFunc(visitor, self.__class__)(self)
+    return getVisitorFunc(visitor, self.__class__)(self)
 
   def is_empty(self):
     return False
-
-  def get_scope(self):
-    return self.parent.get_scope()
 
   def get_current_line(self):
     return self.parent.get_current_line()
@@ -81,16 +77,13 @@ class BaseSection(ArrayNode):
     self.current_line = line
 
 class RootSection(BaseSection):
-  def get_scope(self):
-    return self.scope
-
+  pass
 
 class ScopelessSection(BaseSection):
   pass
 
 class Section(BaseSection):
-  def get_scope(self):
-    return self.scope
+  pass
 
 class Declaration(Node):
   def __init__(self, declarator, linespan=None):
