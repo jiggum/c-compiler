@@ -130,7 +130,7 @@ class Parser(Lexer):
     p[0] = p[1]
 
   def p_function_declaration(self, p):
-    '''function_declaration : type function_declarator section_wrapper'''
+    '''function_declaration : type function_declarator scopeless_section_wrapper'''
     p[2].add_type(p[1])
     linespan = (p[1].linespan[0], p[3].linespan[1])
     p[0] = ast.FnDeclaration(p[2], p[3], linespan=linespan)

@@ -9,9 +9,6 @@ class Node():
     self.result = None
 
   def accept(self, visitor):
-    if (self.terminated):
-      return self.terminated, self.result, None
-    self.visited = True
     return getVisitorFunc(visitor, self.__class__)(self)
 
   def is_empty(self):
@@ -303,6 +300,8 @@ class FnExpression(Node):
     self.expr.parent = self
     self.arguments = arguments
     self.arguments.parent = self
+    self.body = None # body will be cloned on FlowVisitor
+    self.initialized = False
 
   def clone(self, parent):
     new_node = self.__class__(self.expr, self.arguments, linespan=self.linespan)
