@@ -5,7 +5,6 @@ class Node():
   def __init__(self, linespan=None):
     self.linespan = linespan
     self.parent = None
-    self.callstack = None
     self.scope = None
     self.current_line = None
     self.section_linespan = None
@@ -19,9 +18,6 @@ class Node():
   def get_scope(self):
     return self.parent.get_scope()
 
-  def get_callstack(self):
-    return self.parent.get_callstack()
-
   def get_current_line(self):
     return self.parent.get_current_line()
 
@@ -33,12 +29,6 @@ class Node():
 
   def update_linespan(self, linespan):
     self.linespan = linespan
-
-  def push_callstack(self, node):
-    return self.parent.push_callstack(node)
-
-  def pop_callstack(self):
-    return self.parent.pop_callstack()
 
 class ArrayNode(Node):
   def __init__(self, child=None, linespan=None):
@@ -90,22 +80,10 @@ class BaseSection(ArrayNode):
   def update_current_line(self, line=1):
     self.current_line = line
 
-  def pop_callstack(self):
-    return self.callstack.pop()
-
 class RootSection(BaseSection):
-  def __init__(self, child=None, linespan=None):
-    super().__init__(child=child, linespan=linespan)
-    self.callstack = []
-
   def get_scope(self):
     return self.scope
 
-  def get_callstack(self):
-    return self.callstack
-
-  def push_callstack(self, node):
-    self.callstack.append(node)
 
 class ScopelessSection(BaseSection):
   pass
