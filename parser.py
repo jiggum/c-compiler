@@ -3,6 +3,7 @@ import os
 import ply.yacc as yacc
 from lexer import Lexer
 import ast
+from print_visitor import PrintVisitor
 
 class Parser(Lexer):
   def __init__(self, **kw):
@@ -412,4 +413,6 @@ if __name__ == '__main__':
     src_path = sys.argv[1]
     parser = Parser(debug=True)
     ast = parser.run(src_path)
-    print(ast)
+    printVisitor = PrintVisitor()
+    ast.accept(printVisitor)
+    print(printVisitor)

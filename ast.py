@@ -1,4 +1,5 @@
 import symbol_table as st
+from helper import getVisitorFunc
 
 class Node():
   def __init__(self, linespan=None):
@@ -9,11 +10,14 @@ class Node():
     self.current_line = None
     self.section_linespan = None
 
+  def accept(self, visitor):
+    getVisitorFunc(visitor, self.__class__)(self)
+
   def is_empty(self):
     return False
 
   def get_scope(self):
-    self.parent.get_scope()
+    return self.parent.get_scope()
 
   def get_callstack(self):
     return self.parent.get_callstack()
@@ -24,7 +28,7 @@ class Node():
   def get_section_linespan(self):
     return self.parent.get_section_linespan()
 
-  def update_current_line(self, line):
+  def update_current_line(self, line=1):
     self.parent.update_current_line(line)
 
   def update_linespan(self, linespan):
@@ -35,10 +39,6 @@ class Node():
 
   def pop_callstack(self):
     return self.parent.pop_callstack()
-
-  def __str__(self, level=0, infos={}):
-    ret = "\t"*level + str(self.linespan) + ':' + self.__class__.__name__ + infos.__str__() + '\n'
-    return ret
 
 class ArrayNode(Node):
   def __init__(self, child=None, linespan=None):
@@ -51,14 +51,6 @@ class ArrayNode(Node):
   def add(self, child):
     child.parent = self
     self.childs.append(child)
-
-
-  def __str__(self, level=0, infos={}):
-    ret = super().__str__(level, infos)
-    for child in self.childs:
-        ret += child.__str__(level+1)
-    return ret
-
 
 class EmptyNode(Node):
   def is_empty(self):
@@ -79,20 +71,10 @@ class TypeNode(Node):
   def add_type(self, type):
     self.types.append(type)
 
-  def __str__(self, level=0, infos={}):
-    infos_ = {'types': self.types}
-    infos_.update(infos)
-    return super().__str__(level, infos_)
-
 class Const(Node):
   def __init__(self, value, linespan=None):
     super().__init__(linespan=linespan)
     self.value = value
-
-  def __str__(self, level=0, infos={}):
-    infos_ = {'value': self.value}
-    infos_.update(infos)
-    return super().__str__(level, infos_)
 
 class BaseSection(ArrayNode):
   def __init__(self, child=None, linespan=None):
@@ -105,7 +87,7 @@ class BaseSection(ArrayNode):
   def get_section_linespan(self):
     return self.linespan
 
-  def update_current_line(self, line):
+  def update_current_line(self, line=1):
     self.current_line = line
 
   def pop_callstack(self):
@@ -139,13 +121,6 @@ class Declaration(Node):
     self.type.parent = self
     self.name = declarator.name
 
-  def __str__(self, level=0, infos={}):
-    infos_ = {'name': self.name}
-    infos_.update(infos)
-    ret = super().__str__(level, infos_)
-    ret += self.type.__str__(level+1)
-    return ret
-
 class FnDeclaration(Declaration):
   def __init__(self, declarator, body, linespan=None):
     super().__init__(declarator, linespan=linespan)
@@ -153,13 +128,6 @@ class FnDeclaration(Declaration):
     self.parameterGroup.parent = self
     self.body = body
     self.body.parent = self
-
-
-  def __str__(self, level=0, infos={}):
-    ret = super().__str__(level, infos)
-    ret += self.parameterGroup.__str__(level+1)
-    ret += self.body.__str__(level+1)
-    return ret
 
 class VaDeclartion(Declaration):
   pass
@@ -180,23 +148,11 @@ class Declarator(Node):
     else:
       self.type.add_type(typeNode.get_type())
 
-  def __str__(self, level=0, infos={}):
-    infos_ = {'name': self.name}
-    infos_.update(infos)
-    ret = super().__str__(level, infos_)
-    ret += self.type.__str__(level+1)
-    return ret
-
 class FnDeclarator(Declarator):
   def __init__(self, name, parameterGroup=None, linespan=None):
     super().__init__(name, linespan=linespan)
     self.parameterGroup = parameterGroup
     self.parameterGroup.parent = self
-
-  def __str__(self, level=0, infos={}):
-    ret = super().__str__(level, infos)
-    ret += self.parameterGroup.__str__(level+1)
-    return ret
 
 class VaDeclarator(Declarator):
   pass
@@ -205,11 +161,6 @@ class ArrayDeclarator(Declarator):
   def __init__(self, name, size, linespan=None):
     super().__init__(name, linespan=linespan)
     self.size = size
-
-  def __str__(self, level=0, infos={}):
-    infos_ = {'size': self.size}
-    infos_.update(infos)
-    return super().__str__(level, infos_)
 
 class ParameterGroup(ArrayNode):
   pass
@@ -224,13 +175,6 @@ class ConditionalStatement(Node):
     self.else_section = else_section
     self.else_section.parent = self
 
-  def __str__(self, level=0, infos={}):
-    ret = super().__str__(level, infos)
-    ret += self.expr.__str__(level+1)
-    ret += self.then_section.__str__(level+1)
-    ret += self.else_section.__str__(level+1)
-    return ret
-
 class LoopStatement(Node):
   def __init__(self, expr, section, linespan=None):
     super().__init__(linespan=linespan)
@@ -238,12 +182,6 @@ class LoopStatement(Node):
     self.expr.parent = self
     self.section = section
     self.section.parent = self
-
-  def __str__(self, level=0, infos={}):
-    ret = super().__str__(level, infos)
-    ret += self.expr.__str__(level+1)
-    ret += self.section.__str__(level+1)
-    return ret
 
 class While(LoopStatement):
   pass
@@ -256,12 +194,6 @@ class For(LoopStatement):
     self.term_stmt = term_stmt
     self.term_stmt.parent = self
 
-  def __str__(self, level=0, infos={}):
-    ret = super().__str__(level, infos)
-    ret += self.init_stmt.__str__(level+1)
-    ret += self.term_stmt.__str__(level+1)
-    return ret
-
 class JumpStatement(Node):
   pass
 
@@ -270,11 +202,6 @@ class Return(JumpStatement):
     super().__init__(linespan=linespan)
     self.expr = expr
     self.expr.parent = self
-
-  def __str__(self, level=0, infos={}):
-    ret = super().__str__(level, infos)
-    ret += self.expr.__str__(level+1)
-    return ret
 
 class Break(JumpStatement):
   pass
@@ -294,14 +221,6 @@ class BinaryOp(Node):
     self.right.parent = self
     self.op = op
 
-  def __str__(self, level=0, infos={}):
-    infos_ = {'op': self.op}
-    infos_.update(infos)
-    ret = super().__str__(level, infos_)
-    ret += self.left.__str__(level+1)
-    ret += self.right.__str__(level+1)
-    return ret
-
 class AssignOp(BinaryOp):
   pass
 
@@ -312,13 +231,6 @@ class UnaryOp(Node):
     self.expr.parent = self
     self.op = op
 
-  def __str__(self, level=0, infos={}):
-    infos_ = {'op': self.op}
-    infos_.update(infos)
-    ret = super().__str__(level, infos_)
-    ret += self.expr.__str__(level+1)
-    return ret
-
 class FnExpression(Node):
   def __init__(self, expr, arguments, linespan=None):
     super().__init__(linespan=linespan)
@@ -326,12 +238,6 @@ class FnExpression(Node):
     self.expr.parent = self
     self.arguments = arguments
     self.arguments.parent = self
-
-  def __str__(self, level=0, infos={}):
-    ret = super().__str__(level, infos)
-    ret += self.arguments.__str__(level+1)
-    ret += self.expr.__str__(level+1)
-    return ret
 
 class VaExpression(Node):
   def __init__(self, name, linespan=None):
@@ -342,11 +248,6 @@ class VaExpression(Node):
   def set_pointer(self, type):
     self.pointer = type
 
-  def __str__(self, level=0, infos={}):
-    infos_ = {'name': self.name, 'pointer': self.pointer}
-    infos_.update(infos)
-    return super().__str__(level, infos_)
-
 class ArrayExpression(Node):
   def __init__(self, expr, index, linespan=None):
     super().__init__(linespan=linespan)
@@ -354,10 +255,3 @@ class ArrayExpression(Node):
     self.expr.parent = self
     self.index = index
     self.index.parent = self
-
-  def __str__(self, level=0, infos={}):
-    ret = super().__str__(level, infos)
-    ret += self.index.__str__(level+1)
-    ret += self.expr.__str__(level+1)
-    return ret
-
