@@ -176,7 +176,7 @@ class VaDeclarator(Declarator):
 class ArrayDeclarator(Declarator):
   def __init__(self, name, size, linespan=None):
     super().__init__(name, linespan=linespan)
-    self.size = size
+    self.size = int(size)
 
   def clone(self, parent):
     new_node = self.__class__(self.name, self.size, linespan=self.linespan)

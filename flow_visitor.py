@@ -46,7 +46,7 @@ class FlowVisitor:
   def FnDeclaration(self, node):
     if not node.visited:
       scope = self.get_scope()
-      scope.add(node.name, node.linespan[0], node)
+      scope.define(node.name, node.type, node.linespan[0], node)
     if node.name == 'main':
       if not node.body.visited:
         self.update_lineno(node.body.linespan[0])
@@ -97,25 +97,37 @@ class FlowVisitor:
 
   def VaDeclarator(self, node):
     scope = self.get_scope()
-    scope.add(node.name, node.linespan[0], None)
+    scope.define(node.name, node.type, node.linespan[0], None)
     return True, None, None
 
   def ArrayDeclarator(self, node):
     scope = self.get_scope()
-    scope.add(node.name, node.linespan[0], [])
+    scope.define(node.name, node.type, node.linespan[0], [None] * node.size)
     return True, None, None
 
   def AssignOp(self, node):
-    symbol = None
-    if (node.left.__class__ is ast.VaExpression):
-      symbol = node.left.name
     right_terminated, right_result, right_jump_stmt = self.accept(node.right)
     if not right_terminated:
       return False, None, None
+
     scope = self.get_scope()
-    scope.add(symbol, node.linespan[0], right_result)
+    if node.left.__class__ is ast.VaExpression:
+      symbol = node.left.name
+      scope.add(symbol, node.linespan[0], right_result)
+      node.result = scope.get(symbol)
+    elif node.left.__class__ is ast.ArrayExpression:
+      expr_terminated, expr_result, expr_jump_stmt = self.accept(node.left.expr)
+      if not expr_terminated:
+        return False, None, None
+      index_terminated, index_result, index_jump_stmt = self.accept(node.left.index)
+      if not index_terminated:
+        return False, None, None
+      expr_result[index_result] = right_result
+      node.result = expr_result
+    else:
+      raise ValueError
+
     node.terminated = True
-    node.result = scope.get(symbol)
     return node.terminated, node.result, None
 
   def VaExpression(self, node):
@@ -144,7 +156,7 @@ class FlowVisitor:
       func_scope = SymbolTable()
       self.push_scope(func_scope, node.body.linespan[0])
       for i, parameter in enumerate(func_node.parameterGroup.childs):
-        func_scope.add(parameter.name, parameter.linespan[0], arguments_result[i])
+        func_scope.define(parameter.name, parameter.type, parameter.linespan[0], arguments_result[i])
       node.initialized = True
 
     body_terminated, body_result, body_jump_stmt = self.accept(node.body)
@@ -231,16 +243,12 @@ class FlowVisitor:
     init_stmt_terminated, init_stmt_result, init_stmt_jump_stmt = self.accept(node.init_stmt)
     if not init_stmt_terminated:
       return False, None, None
-    print('line_num', self.line_num)
     while True:
       expr_terminated, expr_result, expr_jump_stmt = self.accept(node.expr)
       if not expr_terminated:
         return False, None, None
       if not expr_result:
         self.pop_scope()
-        self.get_scope().trace('i')
-        self.get_scope().trace('sum')
-        print('not expr_result')
         node.terminated = True
         self.update_lineno(node.linespan[1] + 1)
         return node.terminated, node.result, None
@@ -268,3 +276,14 @@ class FlowVisitor:
 
       node.load_origin()
       self.update_lineno(node.linespan[0])
+
+  def ArrayExpression(self, node):
+    expr_terminated, expr_result, expr_jump_stmt = self.accept(node.expr)
+    if not expr_terminated:
+      return False, None, None
+    index_terminated, index_result, index_jump_stmt = self.accept(node.index)
+    if not index_terminated:
+      return False, None, None
+    node.result = expr_result[index_result]
+    node.terminated = True
+    return node.terminated, node.result, None
