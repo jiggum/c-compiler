@@ -7,7 +7,6 @@ class Parser(Lexer):
   def __init__(self, **kw):
     super().__init__(**kw)
     self.names = {}
-    print(self.tokens)
     try:
       modname = os.path.split(os.path.splitext(__file__)[0])[1] + "_" + self.__class__.__name__
     except:
@@ -403,6 +402,5 @@ class Parser(Lexer):
     pass
 
   def p_error(self, p):
-    print(p)
-    print("Syntax Error at %d." % p.linespan)
+    print("Syntax error : line %d" % p.lineno)
     raise SyntaxError

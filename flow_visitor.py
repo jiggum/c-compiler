@@ -1,20 +1,33 @@
+import sys
+import traceback
 from symbol_table import SymbolTable
 import ast
 from function import globalFunctionTable, Function
 
 class FlowVisitor:
-  def __init__(self, parent=None):
+  def __init__(self, parent=None, debug=False):
     self.parent = parent
     self.scopes = [SymbolTable(globalFunctionTable)]
     self.linenos = [1]
     self.line_num = 0
+    self.debug = debug
+    self.runtime_error = False
 
   def accept(self, node):
-    if (node.terminated):
-      return node.terminated, node.result, None
-    terminated, result, jum_stmt = node.accept(self)
-    node.visited = True
-    return terminated, result, jum_stmt
+    try :
+      if (node.terminated):
+        return node.terminated, node.result, None
+      terminated, result, jum_stmt = node.accept(self)
+      node.visited = True
+      return terminated, result, jum_stmt
+    except:
+      if not self.runtime_error:
+        if self.debug:
+          exc_info = sys.exc_info()
+          traceback.print_exception(*exc_info)
+          del exc_info
+        print('Run-time error : line %d' % node.linespan[0])
+        self.runtime_error = True
 
   def print(self, symbol):
     target = self.get_scope().get(symbol)

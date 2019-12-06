@@ -11,8 +11,6 @@ class Lexer:
     lines = f.readlines()
     data = ''.join(lines)
     self.lexer.input(data)
-    for token in self.lexer:
-      print(token)
 
   tokens = (
     # Reserved
