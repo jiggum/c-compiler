@@ -157,7 +157,7 @@ class Parser(Lexer):
   def p_variable_declaration(self, p):
     '''variable_declaration : type variable_declarator_group SEMICOLON'''
     linespan = (p[1].linespan[0], p.linespan(3)[1])
-    vdl = ast.VaDeclationList(linespan=linespan)
+    vdl = ast.VaDeclarationList(linespan=linespan)
     for variable_declarator in p[2]:
       variable_declarator.add_type(p[1])
       vdl.add(variable_declarator)

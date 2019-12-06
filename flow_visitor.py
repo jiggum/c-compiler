@@ -104,7 +104,7 @@ class FlowVisitor:
     node.terminated = True
     return node.terminated, node.result, None
 
-  def VaDeclationList(self, node):
+  def VaDeclarationList(self, node):
     for child in node.childs:
       self.accept(child)
     node.terminated = True
