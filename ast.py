@@ -22,6 +22,9 @@ class Node():
     new_node.parent = parent
     return new_node
 
+  def get_excutable_lineno(self):
+    return self.linespan[1]
+
 class ArrayNode(Node):
   def __init__(self, child=None, linespan=None):
     super().__init__(linespan=linespan)
@@ -83,7 +86,8 @@ class Const(Node):
     return new_node
 
 class BaseSection(ArrayNode):
-  pass
+  def get_excutable_lineno(self):
+    return self.linespan[0]
 
 class RootSection(BaseSection):
   pass
@@ -194,6 +198,9 @@ class ConditionalStatement(Node):
     self.else_section = else_section
     self.else_section.parent = self
 
+  def get_excutable_lineno(self):
+    return self.expr.linespan[1]
+
   def clone(self, parent):
     new_node = self.__class__(self.expr, self.then_section, self.else_section, linespan=self.linespan)
     new_node.expr = self.expr.clone(new_node)
@@ -209,6 +216,9 @@ class LoopStatement(Node):
     self.expr.parent = self
     self.section = section
     self.section.parent = self
+
+  def get_excutable_lineno(self):
+    return self.expr.linespan[1]
 
   def clone(self, parent):
     new_node = self.__class__(self.expr, self.section, linespan=self.linespan)
@@ -227,6 +237,22 @@ class For(LoopStatement):
     self.init_stmt.parent = self
     self.term_stmt = term_stmt
     self.term_stmt.parent = self
+    self.origin_expr = None
+    self.origin_section = None
+    self.origin_term_stmt = None
+
+  def get_excutable_lineno(self):
+    return self.term_stmt.linespan[1]
+
+  def save_origin(self):
+    self.origin_expr = self.expr.clone(self)
+    self.origin_section = self.section.clone(self)
+    self.origin_term_stmt = self.term_stmt.clone(self)
+
+  def load_origin(self):
+    self.expr = self.origin_expr.clone(self)
+    self.section = self.origin_section.clone(self)
+    self.term_stmt = self.origin_term_stmt.clone(self)
 
   def clone(self, parent):
     new_node = self.__class__(self.init_stmt, self.expr, self.term_stmt, self.section, linespan=self.linespan)
@@ -278,7 +304,26 @@ class BinaryOp(Node):
     return new_node
 
 class AssignOp(BinaryOp):
-  pass
+  def __init__(self, op, left, right, linespan=None):
+    super().__init__(op, left, right, linespan=linespan)
+    self.left = left
+    self.left.parent = self
+    self.op = '='
+    if op == '=':
+      self.right = right
+    elif op == '+=':
+      self.right = BinaryOp('+', self.left.clone(self), right)
+    elif op == '-=':
+      self.right = BinaryOp('-', self.left.clone(self), right)
+    elif op == '*=':
+      self.right = BinaryOp('*', self.left.clone(self), right)
+    elif op == '/=':
+      self.right = BinaryOp('/', self.left.clone(self), right)
+    elif op == '%=':
+      self.right = BinaryOp('%', self.left.clone(self), right)
+    else:
+      raise ValueError
+    self.right.parent = self
 
 class UnaryOp(Node):
   def __init__(self, op, expr, linespan=None):

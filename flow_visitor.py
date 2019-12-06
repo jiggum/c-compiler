@@ -59,14 +59,14 @@ class FlowVisitor:
   def BaseSection(self, node):
     for child in node.childs:
       if not child.visited:
-        child_lineno_end = child.linespan[1] # Todo: handle loop/conditional stmt to start line
-        if child_lineno_end > self.get_lineno() + self.line_num - 1:
+        child_lineno = child.get_excutable_lineno()
+        if child_lineno > self.get_lineno() + self.line_num - 1:
           self.update_lineno(self.get_lineno() + self.line_num)
           self.line_num = 0
           return False, None, None
         else:
-          self.line_num -= child_lineno_end + 1 - self.get_lineno()
-          self.update_lineno(child_lineno_end)
+          self.line_num -= child_lineno + 1 - self.get_lineno()
+          self.update_lineno(child_lineno)
       print(child, self.get_lineno(), self.line_num)
       prev_terminated = child.terminated
       terminated, result, jump_stmt = self.accept(child)
@@ -221,3 +221,50 @@ class FlowVisitor:
 
     node.terminated = True
     return node.terminated, node.result, node
+
+  def For(self, node):
+    if not node.visited:
+      node.save_origin()
+      scope = self.get_scope()
+      self.push_scope(scope, node.linespan[0])
+
+    init_stmt_terminated, init_stmt_result, init_stmt_jump_stmt = self.accept(node.init_stmt)
+    if not init_stmt_terminated:
+      return False, None, None
+    print('line_num', self.line_num)
+    while True:
+      expr_terminated, expr_result, expr_jump_stmt = self.accept(node.expr)
+      if not expr_terminated:
+        return False, None, None
+      if not expr_result:
+        self.pop_scope()
+        self.get_scope().trace('i')
+        self.get_scope().trace('sum')
+        print('not expr_result')
+        node.terminated = True
+        self.update_lineno(node.linespan[1] + 1)
+        return node.terminated, node.result, None
+
+      if not node.section.visited:
+        section_lineno = node.section.get_excutable_lineno()
+        if section_lineno > self.get_lineno() + self.line_num - 1:
+          self.update_lineno(self.get_lineno() + self.line_num)
+          self.line_num = 0
+          return False, None, None
+        else:
+          self.line_num -= section_lineno - self.get_lineno()
+          self.update_lineno(section_lineno)
+      terminated, result, jump_stmt = self.accept(node.section)
+      if (not terminated):
+        return False, None, None
+      elif jump_stmt is not None:
+        node.terminated = True
+        node.result = jump_stmt.result
+        return node.terminated, node.result, jump_stmt
+
+      term_stmt_terminated, term_stmt_result, term_stmt_jump_stmt = self.accept(node.term_stmt)
+      if (not term_stmt_terminated):
+        return False, None, None
+
+      node.load_origin()
+      self.update_lineno(node.linespan[0])
