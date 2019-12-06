@@ -136,7 +136,22 @@ class FlowVisitor:
 
   # def ParameterGroup(self): // not necessary
 
-  # def ConditionalStatement(self):
+  def ConditionalStatement(self, node):
+    print('mark', self.get_scope().get('mark')) # Todo remove
+    self.get_scope().trace('average') # Todo remove
+    expr_terminated, expr_result, expr_jump_stmt = self.accept(node.expr)
+    if not expr_terminated:
+      return False, None, None
+
+    if expr_result or (not node.else_section.is_empty()):
+      section = node.then_section if expr_result else node.else_section
+      print('section', section) # Todo remove
+      to_return, terminated, result, jump_stmt = self.visit_with_linecount(section)
+      if to_return:
+        return terminated, result, jump_stmt
+
+    node.terminated = True
+    return node.terminated, node.result, None
 
   # def LoopStatement(self):
 
