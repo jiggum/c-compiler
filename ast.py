@@ -130,9 +130,6 @@ class FnDeclaration(Declaration):
     new_node.parent = parent
     return new_node
 
-class VaDeclartion(Declaration):
-  pass
-
 class VaDeclationList(ArrayNode):
   pass
 
