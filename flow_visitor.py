@@ -35,6 +35,33 @@ class FlowVisitor:
   def update_lineno(self, lineno):
     self.linenos[-1] = lineno
 
+  # return to_return, terminated, result, jump_stmt
+  def visit_with_linecount(self, node, lazy=False):
+    if not node.visited:
+      lineno = node.get_excutable_lineno()
+      if lineno > self.get_lineno() + self.line_num - 1:
+        self.update_lineno(self.get_lineno() + self.line_num)
+        self.line_num = 0
+        return True, False, None, None
+      else:
+        self.line_num -= lineno - self.get_lineno()
+        if lazy:
+          self.line_num -= 1
+        self.update_lineno(lineno)
+    if lazy:
+      print(node, self.get_lineno(), self.line_num)
+    prev_terminated = node.terminated
+    terminated, result, jump_stmt = self.accept(node)
+    if (not terminated):
+      return True, False, None, None
+    elif jump_stmt is not None:
+      node.terminated = True
+      node.result = jump_stmt.result
+      return True, node.terminated, node.result, jump_stmt
+    if lazy and (not prev_terminated):
+      self.update_lineno(self.get_lineno() + 1)
+    return False, None, None, None
+
   # def ArrayNode(self):
 
   # def EmptyNode(self):
@@ -48,26 +75,9 @@ class FlowVisitor:
 
   def BaseSection(self, node):
     for child in node.childs:
-      if not child.visited:
-        child_lineno = child.get_excutable_lineno()
-        if child_lineno > self.get_lineno() + self.line_num - 1:
-          self.update_lineno(self.get_lineno() + self.line_num)
-          self.line_num = 0
-          return False, None, None
-        else:
-          self.line_num -= child_lineno + 1 - self.get_lineno()
-          self.update_lineno(child_lineno)
-      print(child, self.get_lineno(), self.line_num)
-      prev_terminated = child.terminated
-      terminated, result, jump_stmt = self.accept(child)
-      if (not terminated):
-        return False, None, None
-      elif jump_stmt is not None:
-        node.terminated = True
-        node.result = jump_stmt.result
-        return node.terminated, node.result, jump_stmt
-      if not prev_terminated:
-        self.update_lineno(self.get_lineno() + 1)
+      to_return, terminated, result, jump_stmt = self.visit_with_linecount(child, True)
+      if to_return:
+        return terminated, result, jump_stmt
     node.terminated = True
     return node.terminated, node.result, None
 
@@ -124,7 +134,7 @@ class FlowVisitor:
     scope.define(node.name, node.type, node.linespan[0], [None] * node.size)
     return True, None, None
 
-  # def ParameterGroup(self):
+  # def ParameterGroup(self): // not necessary
 
   # def ConditionalStatement(self):
 
@@ -151,22 +161,9 @@ class FlowVisitor:
         self.update_lineno(node.linespan[1] + 1)
         return node.terminated, node.result, None
 
-      if not node.section.visited:
-        section_lineno = node.section.get_excutable_lineno()
-        if section_lineno > self.get_lineno() + self.line_num - 1:
-          self.update_lineno(self.get_lineno() + self.line_num)
-          self.line_num = 0
-          return False, None, None
-        else:
-          self.line_num -= section_lineno - self.get_lineno()
-          self.update_lineno(section_lineno)
-      terminated, result, jump_stmt = self.accept(node.section)
-      if (not terminated):
-        return False, None, None
-      elif jump_stmt is not None:
-        node.terminated = True
-        node.result = jump_stmt.result
-        return node.terminated, node.result, jump_stmt
+      to_return, terminated, result, jump_stmt = self.visit_with_linecount(node.section)
+      if to_return:
+        return terminated, result, jump_stmt
 
       term_stmt_terminated, term_stmt_result, term_stmt_jump_stmt = self.accept(node.term_stmt)
       if (not term_stmt_terminated):
