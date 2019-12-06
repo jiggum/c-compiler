@@ -7,9 +7,11 @@ from print_visitor import PrintVisitor
 
 DEBUG=True
 
-CLI_NEXT_REGEX = re.compile('^next(?: (\d+))?$')
-CLI_PRINT_REGEX = re.compile('^print (\w+)$')
+CLI_NEXT_REGEX = re.compile('^next(?: (.+))?$')
+CLI_PRINT_REGEX = re.compile('^print(?: (.+))?$')
 CLI_TRACE_REGEX = re.compile('^trace (\w+)$')
+LINE_RGEX = re.compile('^\d+$')
+VARIABLE_RGEX = re.compile('^[a-zA-Z_$][a-zA-Z_$0-9]*$')
 
 if __name__ == '__main__':
     src_path = sys.argv[1]
@@ -26,16 +28,25 @@ if __name__ == '__main__':
         if CLI_NEXT_REGEX.search(input_str):
           m = CLI_NEXT_REGEX.match(input_str)
           lines_str = m.groups()[0]
+          if lines_str is not None and LINE_RGEX.search(lines_str) is None:
+            print('Incorrect command usage : try ‘next [lines]')
+            continue
           lines = 1 if lines_str is None else int(m.groups()[0])
           flowVisitor.add_linenum(lines)
           ast.accept(flowVisitor)
         elif CLI_PRINT_REGEX.search(input_str):
           m = CLI_PRINT_REGEX.match(input_str)
           symbol = m.groups()[0]
+          if symbol is None or VARIABLE_RGEX.search(symbol) is None:
+            print('Invalid typing of the variable name')
+            continue
           flowVisitor.print(symbol)
         elif CLI_TRACE_REGEX.search(input_str):
           m = CLI_TRACE_REGEX.match(input_str)
           symbol = m.groups()[0]
+          if symbol is None or VARIABLE_RGEX.search(symbol) is None:
+            print('Invalid typing of the variable name')
+            continue
           flowVisitor.trace(symbol)
     except:
       if DEBUG:

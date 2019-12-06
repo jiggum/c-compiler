@@ -50,6 +50,9 @@ class SymbolTable:
   def add(self, symbol, lineno, value):
     self.table[symbol].add_log(lineno, value)
 
+  def has(self, symbol):
+    return symbol in self.table
+
   def get(self, symbol):
     return self.table[symbol].get()
 

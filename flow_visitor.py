@@ -30,11 +30,19 @@ class FlowVisitor:
         self.runtime_error = True
 
   def print(self, symbol):
-    target = self.get_scope().get(symbol)
-    print('N/A' if target is None else target)
+    scope = self.get_scope()
+    if not scope.has(symbol):
+      print('Invisible variable')
+    else:
+      target = scope.get(symbol)
+      print('N/A' if target is None else target)
 
   def trace(self, symbol):
-    self.get_scope().trace(symbol)
+    scope = self.get_scope()
+    if not scope.has(symbol):
+      print('Invisible variable')
+    else:
+      scope.trace(symbol)
 
   def add_linenum(self, line_num):
     self.line_num += line_num
