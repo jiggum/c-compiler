@@ -16,6 +16,13 @@ class FlowVisitor:
     node.visited = True
     return terminated, result, jum_stmt
 
+  def print(self, symbol):
+    target = self.get_scope().get(symbol)
+    print('N/A' if target is None else target)
+
+  def trace(self, symbol):
+    self.get_scope().trace(symbol)
+
   def add_linenum(self, line_num):
     self.line_num += line_num
 
@@ -85,6 +92,7 @@ class FlowVisitor:
       terminated, result, jump_stmt = self.accept(child)
       if not terminated:
         return terminated, result, None
+    print('End of program')
     node.terminated = True
     return node.terminated, node.result, None
 
