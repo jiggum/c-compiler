@@ -1,10 +1,11 @@
 from symbol_table import SymbolTable
 import ast
+from function import globalFunctionTable, Function
 
 class FlowVisitor:
   def __init__(self, parent=None):
     self.parent = parent
-    self.scopes = [SymbolTable()]
+    self.scopes = [SymbolTable(globalFunctionTable)]
     self.linenos = [1]
     self.line_num = 0
 
@@ -48,8 +49,6 @@ class FlowVisitor:
         if lazy:
           self.line_num -= 1
         self.update_lineno(lineno)
-    if lazy:
-      print(node, self.get_lineno(), self.line_num)
     prev_terminated = node.terminated
     terminated, result, jump_stmt = self.accept(node)
     if (not terminated):
@@ -137,15 +136,12 @@ class FlowVisitor:
   # def ParameterGroup(self): // not necessary
 
   def ConditionalStatement(self, node):
-    print('mark', self.get_scope().get('mark')) # Todo remove
-    self.get_scope().trace('average') # Todo remove
     expr_terminated, expr_result, expr_jump_stmt = self.accept(node.expr)
     if not expr_terminated:
       return False, None, None
 
     if expr_result or (not node.else_section.is_empty()):
       section = node.then_section if expr_result else node.else_section
-      print('section', section) # Todo remove
       to_return, terminated, result, jump_stmt = self.visit_with_linecount(section)
       if to_return:
         return terminated, result, jump_stmt
@@ -295,24 +291,24 @@ class FlowVisitor:
     if not arguments_terminated:
       return False, None, None
 
-    if not node.initialized:
-      scope = self.get_scope()
-      symbol = expr_result.name
-      func_node = scope.get(symbol)
-      node.body = func_node.body.clone(node)
-      func_scope = SymbolTable()
-      self.push_scope(func_scope, node.body.linespan[0])
-      for i, parameter in enumerate(func_node.parameterGroup.childs):
-        func_scope.define(parameter.name, parameter.type, parameter.linespan[0], arguments_result[i])
-      node.initialized = True
+    if expr_result.__class__ is Function:
+      node.result = expr_result.run(*arguments_result)
+    else:
+      if not node.initialized:
+        node.body = expr_result.body.clone(node)
+        func_scope = SymbolTable()
+        self.push_scope(func_scope, node.body.linespan[0])
+        for i, parameter in enumerate(expr_result.parameterGroup.childs):
+          func_scope.define(parameter.name, parameter.type, parameter.linespan[0], arguments_result[i])
+        node.initialized = True
 
-    body_terminated, body_result, body_jump_stmt = self.accept(node.body)
-    if not body_terminated:
-      return False, None, None
-    self.pop_scope()
+      body_terminated, body_result, body_jump_stmt = self.accept(node.body)
+      if not body_terminated:
+        return False, None, None
+      self.pop_scope()
+      node.result = body_result
     node.terminated = True
-    node.result = body_result
-    return node.terminated, node.result, body_jump_stmt
+    return node.terminated, node.result, None
 
   def VaExpression(self, node):
     node.result = self.get_scope().get(node.name)

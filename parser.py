@@ -383,11 +383,11 @@ class Parser(Lexer):
 
   def p_const_expression_3(self, p):
     '''const_expression : CHARACTER'''
-    p[0] = ast.Const(p[1], linespan=p.linespan(1))
+    p[0] = ast.Const(p[1][1:-1], linespan=p.linespan(1))
 
   def p_const_expression_4(self, p):
     '''const_expression : STRING'''
-    p[0] = ast.Const(p[1], linespan=p.linespan(1))
+    p[0] = ast.Const(p[1][1:-1], linespan=p.linespan(1))
 
   # ETC
 
