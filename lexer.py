@@ -152,8 +152,3 @@ class Lexer:
   def t_error(self, t):
     print("Illegal character '%s'" % t.value[0])
     t.lexer.skip(1)
-
-# if __name__ == '__main__':
-#     src_path = sys.argv[1]
-#     lexer = Lexer(debug=True)
-#     lexer.run(src_path)
