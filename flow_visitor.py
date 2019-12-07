@@ -184,14 +184,13 @@ class FlowVisitor:
   # def ParameterGroup(self): // not necessary
 
   def ConditionalStatement(self, node):
-    prev_expr_terminated = node.expr.terminated
     expr_terminated, expr_result, expr_jump_stmt = self.accept(node.expr)
     if not expr_terminated:
       return False, None, None
-    if not prev_expr_terminated:
-      self.update_lineno(self.get_lineno() + 1)
     if expr_result or (not node.else_section.is_empty()):
       section = node.then_section if expr_result else node.else_section
+      if not section.visited:
+        self.update_lineno(section.linespan[0])
       to_return, terminated, result, jump_stmt = self.visit_with_linecount(section)
       if to_return:
         node.terminated = terminated
