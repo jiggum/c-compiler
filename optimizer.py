@@ -2,6 +2,7 @@ import sys
 import re
 from parser import Parser
 from write_visitor import WriteVisitor
+from flow_visitor import FlowVisitor
 
 DEBUG=True
 
@@ -16,8 +17,10 @@ if __name__ == '__main__':
   target_path = sys.argv[2]
   parser = Parser(debug=DEBUG)
   ast = parser.run(src_path)
-  printVisitor = WriteVisitor()
-  s = ast.accept(printVisitor)
+  flowVisitor = FlowVisitor(debug=DEBUG, constant_folding=True)
+  ast.accept(flowVisitor)
+  writeVisitor = WriteVisitor()
+  s = ast.accept(writeVisitor)
   f = open(target_path, 'w')
   f.write(s)
   f.close()

@@ -32,6 +32,7 @@ class Node():
     for prop in props(self.parent):
       if getattr(self.parent, prop) == self:
         setattr(self.parent, prop, node)
+        node.parent = self.parent
         break
 
 class ArrayNode(Node):

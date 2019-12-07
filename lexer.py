@@ -119,7 +119,7 @@ class Lexer:
     return t
 
   def t_NUMBER_FLOAT(self, t):
-    r'(([1-9]\d*)|0(?!\d))(.\d*[1-9])'
+    r'(([1-9]\d*)|0(?!\d))(\.\d*[1-9])'
     return t
 
   def t_NUMBER_INT(self, t):

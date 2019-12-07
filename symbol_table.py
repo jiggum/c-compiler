@@ -27,6 +27,8 @@ class SymbolTableEntry:
     self.symbol = symbol
     self.type = type
     self.history = History(symbol)
+    self.constant = True
+    self.used = False
 
   def add_log(self, lineno, value):
     self.history.add(lineno, value)
@@ -59,3 +61,15 @@ class SymbolTable:
 
   def trace(self, symbol):
     self.table[symbol].trace()
+
+  def set_constant(self, symbol, constant):
+    self.table[symbol].constant = constant
+
+  def is_constant(self, symbol):
+    return self.table[symbol].constant
+
+  def set_used(self, symbol):
+    self.table[symbol].used = True
+
+  def is_used(self, symbol):
+    return self.table[symbol].used
