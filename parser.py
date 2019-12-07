@@ -230,7 +230,7 @@ class Parser(Lexer):
     p[0] = ast.ConditionalStatement(p[3], p[5], p[7], linespan=linespan)
 
   def p_loop_statement_1(self, p):
-    '''loop_statement : WHILE PAREN_L expression PAREN_R section_wrapper'''
+    '''loop_statement : WHILE PAREN_L expression PAREN_R scopeless_section_wrapper'''
     linespan = (p.linespan(1)[0], p[5].linespan[1])
     p[0] = ast.While(p[3], p[5], linespan=linespan)
 

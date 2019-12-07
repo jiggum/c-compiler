@@ -38,7 +38,8 @@ class SymbolTableEntry:
     return self.history.get()
 
 class SymbolTable:
-  def __init__(self, inherit_symbol_table=None):
+  def __init__(self, node, inherit_symbol_table=None):
+    self.node = node
     self.table = {}
     if (inherit_symbol_table):
       self.table.update(inherit_symbol_table.table)

@@ -6,7 +6,7 @@ from function import globalFunctionTable, Function
 
 class FlowVisitor:
   def __init__(self, debug=False):
-    self.scopes = [SymbolTable(globalFunctionTable)]
+    self.scopes = [SymbolTable(ast.EmptyNode(), globalFunctionTable)]
     self.linenos = [1]
     self.line_num = 0
     self.debug = debug
@@ -62,6 +62,12 @@ class FlowVisitor:
 
   def update_lineno(self, lineno):
     self.linenos[-1] = lineno
+
+  def is_in_loop(self):
+    for scope in reversed(self.scopes):
+      if isinstance(scope.node, ast.LoopStatement):
+        return True
+    return False
 
   # return to_return, terminated, result, jump_stmt
   def visit_with_linecount(self, node, lazy=False):
@@ -120,7 +126,7 @@ class FlowVisitor:
 
   def Section(self, node):
     if (not node.visited):
-      self.push_scope(SymbolTable(self.get_scope()), node.linespan[0])
+      self.push_scope(SymbolTable(ast.EmptyNode(), self.get_scope()), node.linespan[0])
     terminated, result, jum_stmt = self.BaseSection(node)
     if (terminated):
       self.pop_scope()
@@ -177,13 +183,16 @@ class FlowVisitor:
     node.terminated = True
     return node.terminated, node.result, None
 
-  # def LoopStatement(self): // all child node implemented by itself
-
-  def While(self, node):
+  def LoopStatement(self, node):
     if not node.visited:
       node.save_origin()
       scope = self.get_scope()
-      self.push_scope(scope, node.linespan[0])
+      self.push_scope(SymbolTable(node, scope), node.linespan[0])
+
+    if node.init_stmt is not None:
+      init_stmt_terminated, init_stmt_result, init_stmt_jump_stmt = self.accept(node.init_stmt)
+      if not init_stmt_terminated:
+        return False, None, None
 
     while True:
       expr_terminated, expr_result, expr_jump_stmt = self.accept(node.expr)
@@ -197,54 +206,56 @@ class FlowVisitor:
 
       to_return, terminated, result, jump_stmt = self.visit_with_linecount(node.section)
       if to_return:
-        return terminated, result, jump_stmt
+        if jump_stmt is not None:
+          if isinstance(jump_stmt, ast.Return):
+            self.pop_scope()
+            self.update_lineno(node.linespan[1] + 1)
+            return terminated, result, jump_stmt
+          elif isinstance(jump_stmt, ast.Break):
+            self.pop_scope()
+            self.update_lineno(node.linespan[1] + 1)
+            return terminated, None, None
+          elif isinstance(jump_stmt, ast.Continue):
+            pass
+          else:
+            raise ValueError
+        else:
+          return terminated, None, None
+
+      if node.term_stmt is not None:
+        term_stmt_terminated, term_stmt_result, term_stmt_jump_stmt = self.accept(node.term_stmt)
+        if (not term_stmt_terminated):
+          return False, None, None
 
       node.load_origin()
       self.update_lineno(node.linespan[0])
 
-  def For(self, node):
-    if not node.visited:
-      node.save_origin()
-      scope = self.get_scope()
-      self.push_scope(scope, node.linespan[0])
+  # def While(self): // covered by LoopStatement
 
-    init_stmt_terminated, init_stmt_result, init_stmt_jump_stmt = self.accept(node.init_stmt)
-    if not init_stmt_terminated:
-      return False, None, None
-    while True:
-      expr_terminated, expr_result, expr_jump_stmt = self.accept(node.expr)
-      if not expr_terminated:
-        return False, None, None
-      if not expr_result:
-        self.pop_scope()
-        node.terminated = True
-        self.update_lineno(node.linespan[1] + 1)
-        return node.terminated, node.result, None
-
-      to_return, terminated, result, jump_stmt = self.visit_with_linecount(node.section)
-      if to_return:
-        return terminated, result, jump_stmt
-
-      term_stmt_terminated, term_stmt_result, term_stmt_jump_stmt = self.accept(node.term_stmt)
-      if (not term_stmt_terminated):
-        return False, None, None
-
-      node.load_origin()
-      self.update_lineno(node.linespan[0])
+  # def For(self): // covered by LoopStatement
 
   # def JumpStatement(self): // all child node implemented by itself
 
   def Return(self, node):
-    terminated, result, jump_stmt = self.accept(node.expr)
-    if (not terminated):
-      return False, None, None
+    if not node.expr.is_empty():
+      terminated, result, jump_stmt = self.accept(node.expr)
+      if (not terminated):
+        return False, None, None
+      node.result = result
     node.terminated = True
-    node.result = result
     return node.terminated, node.result, node
 
-  # def Break(self):
+  def Break(self, node):
+    if not self.is_in_loop():
+      raise ValueError
+    node.terminated = True
+    return node.terminated, node.result, node
 
-  # def Continue(self):
+  def Continue(self, node):
+    if not self.is_in_loop():
+      raise ValueError
+    node.terminated = True
+    return node.terminated, node.result, node
 
   def ArgumentList(self, node):
     results = []
@@ -358,7 +369,7 @@ class FlowVisitor:
     else:
       if not node.initialized:
         node.body = expr_result.body.clone()
-        func_scope = SymbolTable()
+        func_scope = SymbolTable(expr_result)
         self.push_scope(func_scope, node.body.linespan[0])
         for i, parameter in enumerate(expr_result.parameterGroup.childs):
           func_scope.define(parameter.name, parameter.type, parameter.linespan[0], arguments_result[i])

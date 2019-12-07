@@ -187,7 +187,9 @@ class ConditionalStatement(Node):
 class LoopStatement(Node):
   def __init__(self, expr, section, linespan=None):
     super().__init__(linespan=linespan)
+    self.init_stmt = None
     self.expr = expr
+    self.term_stmt = None
     self.section = section
 
   def get_excutable_lineno(self):
