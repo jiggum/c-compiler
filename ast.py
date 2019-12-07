@@ -35,6 +35,13 @@ class Node():
         node.parent = self.parent
         break
 
+    if hasattr(self.parent, 'childs'):
+      for i, child in enumerate(self.parent.childs):
+        if child == self:
+          self.parent.childs[i] = node
+          node.parent = self.parent
+          break
+
 class ArrayNode(Node):
   def __init__(self, child=None, linespan=None):
     super().__init__(linespan=linespan)

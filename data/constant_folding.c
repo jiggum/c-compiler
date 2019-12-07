@@ -23,17 +23,11 @@ int main(void)
   float average;
 
   count = 4;
-  sum = 4 + -count;
-
-  for(i = 0; i < count; i++)
+  sum = 5 + -count;
+  i = 9;
+  if(count > 3)
   {
-    mark[i] = i * 30;
-    sum = count;
-    sum = sum + mark[i];
-    average = avg(i + 1, mark);
-    if(average > 23)
-    {
-      printf("%f\n", average);
-    }
+    i = sum;
   }
+  sum = i;
 }

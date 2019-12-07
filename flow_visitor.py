@@ -16,6 +16,7 @@ class FlowVisitor:
     self.freeze_constant_folding = False
     self.freeze_set_constant = False
     self.check_constant_outer = False
+    self.check_constant_self = False
 
   def accept(self, node):
     try :
@@ -73,6 +74,24 @@ class FlowVisitor:
       if isinstance(scope.node, ast.LoopStatement):
         return True
     return False
+
+  def is_parent_scope_node(self, node):
+    if node is None:
+      return True
+    for scope in reversed(self.scopes):
+      if scope.node is node:
+        return True
+    return False
+
+  def is_constant(self, symbol):
+    scope = self.get_scope()
+    constant_section = scope.get_constant_section(symbol)
+    constant = scope.is_constant(symbol)
+    if self.check_constant_outer:
+      return constant and self.is_parent_scope_node(constant_section) and (self.get_conditional_section() is not constant_section)
+    if self.check_constant_self:
+      return constant and self.get_conditional_section() is constant_section
+    return constant and self.is_parent_scope_node(constant_section)
 
   def get_conditional_section(self):
     for scope in reversed(self.scopes):
@@ -198,19 +217,33 @@ class FlowVisitor:
     if not expr_terminated:
       return False, None, None
     if expr_result or (not node.else_section.is_empty()):
-      section = node.then_section if expr_result else node.else_section
-      if not section.visited:
-        self.push_scope(SymbolTable(node, self.get_scope()), section.linespan[0])
-        self.update_lineno(section.linespan[0])
-      to_return, terminated, result, jump_stmt = self.visit_with_linecount(section)
-      if to_return:
-        if jump_stmt is not None:
+      if self.is_optimizer():
+        if not node.then_section.visited:
+          self.push_scope(SymbolTable(node, self.get_scope()), node.then_section.linespan[0])
+          self.update_lineno(node.then_section.linespan[0])
+          self.visit_with_linecount(node.then_section)
           self.pop_scope()
-        node.terminated = terminated
-        node.result = result
-        return node.terminated, node.result, jump_stmt
-      self.pop_scope()
-      self.line_num -= 1
+          self.line_num -= 1
+        if not node.else_section.is_empty() and not node.else_section.visited:
+          self.update_lineno(node.else_section.linespan[0])
+          self.push_scope(SymbolTable(node, self.get_scope()), node.else_section.linespan[0])
+          self.visit_with_linecount(node.else_section)
+          self.pop_scope()
+        self.line_num -= 1
+      else:
+        section = node.then_section if expr_result else node.else_section
+        if not section.visited:
+          self.push_scope(SymbolTable(node, self.get_scope()), section.linespan[0])
+          self.update_lineno(section.linespan[0])
+        to_return, terminated, result, jump_stmt = self.visit_with_linecount(section)
+        if to_return:
+          if jump_stmt is not None:
+            self.pop_scope()
+          node.terminated = terminated
+          node.result = result
+          return node.terminated, node.result, jump_stmt
+        self.pop_scope()
+        self.line_num -= 1
 
     self.update_lineno(node.linespan[1])
     node.terminated = True
@@ -219,9 +252,11 @@ class FlowVisitor:
   def LoopStatement(self, node):
     iter_count = 0
     prev_check_constant_outer = self.check_constant_outer
+    prev_check_constant_self = self.check_constant_self
     if self.is_optimizer():
       iter_count = 2
       self.check_constant_outer = False
+      self.check_constant_self = True
 
     if not node.visited:
       node.save_origin()
@@ -285,6 +320,7 @@ class FlowVisitor:
       if self.is_optimizer():
         iter_count -= 1
         if self.constant_folding:
+          self.check_constant_self = prev_check_constant_self
           self.check_constant_outer = True
         if iter_count <= 0:
           if self.constant_folding:
@@ -388,7 +424,7 @@ class FlowVisitor:
       scope = self.get_scope()
       if node.left.__class__ is ast.VaExpression:
         scope.add(node.left.name, node.linespan[0], node.result)
-        if scope.is_constant(node.left.name, self.get_conditional_section(), self.check_constant_outer) and not self.freeze_set_constant:
+        if self.is_constant(node.left.name) and not self.freeze_set_constant:
           scope.set_constant(node.left.name, True, self.get_conditional_section())
       elif self.constant_folding and (node.left.__class__ is ast.Const) and (not self.freeze_constant_folding):
         node.replace(ast.Const(node.result, node.linespan))
@@ -484,7 +520,7 @@ class FlowVisitor:
   def VaExpression(self, node):
     scope = self.get_scope()
     node.result = scope.get(node.name)
-    if self.constant_folding and scope.is_constant(node.name, self.get_conditional_section(), self.check_constant_outer) and (not self.freeze_constant_folding):
+    if self.constant_folding and self.is_constant(node.name) and (not self.freeze_constant_folding):
       node.replace(ast.Const(node.result, node.linespan))
     node.terminated = True
     return node.terminated, node.result, None

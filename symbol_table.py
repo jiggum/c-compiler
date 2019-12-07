@@ -67,12 +67,11 @@ class SymbolTable:
     self.table[symbol].constant = constant
     self.table[symbol].constant_section = constant_section
 
-  def is_constant(self, symbol, current_loop_node, check_outer):
-    constant = self.table[symbol].constant
-    constant_section = self.table[symbol].constant_section
-    if check_outer:
-      return constant and (constant_section is not current_loop_node)
-    return constant and (constant_section is current_loop_node)
+  def is_constant(self, symbol):
+    return self.table[symbol].constant
+
+  def get_constant_section(self, symbol):
+    return self.table[symbol].constant_section
 
   def set_used(self, symbol):
     self.table[symbol].used = True
