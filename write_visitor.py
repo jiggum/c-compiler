@@ -28,6 +28,8 @@ class WriteVisitor:
     return node.types[-1]
 
   def Const(self, node):
+    if isinstance(node.value, str):
+      return '"{}"'.format(node.value)
     return str(node.value)
 
   def BaseSection(self, node):

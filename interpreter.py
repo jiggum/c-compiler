@@ -1,8 +1,8 @@
 import sys
 import re
+import traceback
 from parser import Parser
 from flow_visitor import FlowVisitor
-import traceback
 from print_visitor import PrintVisitor
 
 DEBUG=True
