@@ -23,6 +23,9 @@ class Node():
   def get_excutable_lineno(self):
     return self.linespan[1]
 
+  def need_semi(self):
+    return True
+
 class ArrayNode(Node):
   def __init__(self, child=None, linespan=None):
     super().__init__(linespan=linespan)
@@ -109,6 +112,9 @@ class FnDeclaration(Declaration):
     self.parameterGroup = declarator.parameterGroup
     self.body = body
 
+  def need_semi(self):
+    return False
+
   def clone(self):
     new_node = self.__class__(self.declarator, self.body, linespan=self.linespan)
     new_node.type = self.type.clone()
@@ -177,6 +183,9 @@ class ConditionalStatement(Node):
   def get_excutable_lineno(self):
     return self.expr.linespan[1]
 
+  def need_semi(self):
+    return False
+
   def clone(self):
     new_node = self.__class__(self.expr, self.then_section, self.else_section, linespan=self.linespan)
     new_node.expr = self.expr.clone()
@@ -194,6 +203,9 @@ class LoopStatement(Node):
 
   def get_excutable_lineno(self):
     return self.expr.linespan[1]
+
+  def need_semi(self):
+    return False
 
   def clone(self):
     new_node = self.__class__(self.expr, self.section, linespan=self.linespan)
