@@ -95,9 +95,6 @@ class BaseSection(ArrayNode):
 class RootSection(BaseSection):
   pass
 
-class ScopelessSection(BaseSection):
-  pass
-
 class Section(BaseSection):
   pass
 

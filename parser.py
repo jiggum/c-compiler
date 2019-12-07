@@ -84,31 +84,6 @@ class Parser(Lexer):
 
   def p_section_2(self, p):
     '''section : section sector'''
-    linespan = (p[1].linespan[0], p[2].linespan[1])
-    p[1].add(p[2])
-    p[1].update_linespan(linespan)
-    p[0] = p[1]
-
-  def p_scopeless_section_wrapper(self, p):
-    '''scopeless_section_wrapper : BRACE_L scopeless_section_opt BRACE_R'''
-    linespan = (p.linespan(1)[0], p.linespan(3)[1])
-    p[2].update_linespan(linespan)
-    p[0] = p[2]
-
-  def p_scopeless_section_opt_1(self, p):
-    '''scopeless_section_opt : empty'''
-    pass
-
-  def p_scopeless_section_opt_2(self, p):
-    '''scopeless_section_opt : scopeless_section'''
-    p[0] = p[1]
-
-  def p_scopeless_section_1(self, p):
-    '''scopeless_section : sector'''
-    p[0] = ast.ScopelessSection(p[1], linespan=p[1].linespan)
-
-  def p_scopeless_section_2(self, p):
-    '''scopeless_section : scopeless_section sector'''
     linespan = (p.linespan(1)[0], p.linespan(2)[1])
     p[1].add(p[2])
     p[1].update_linespan(linespan)
@@ -127,7 +102,7 @@ class Parser(Lexer):
     p[0] = p[1]
 
   def p_function_declaration(self, p):
-    '''function_declaration : type function_declarator scopeless_section_wrapper'''
+    '''function_declaration : type function_declarator section_wrapper'''
     p[2].add_type(p[1])
     linespan = (p[1].linespan[0], p[3].linespan[1])
     p[0] = ast.FnDeclaration(p[2], p[3], linespan=linespan)
@@ -230,12 +205,12 @@ class Parser(Lexer):
     p[0] = ast.ConditionalStatement(p[3], p[5], p[7], linespan=linespan)
 
   def p_loop_statement_1(self, p):
-    '''loop_statement : WHILE PAREN_L expression PAREN_R scopeless_section_wrapper'''
+    '''loop_statement : WHILE PAREN_L expression PAREN_R section_wrapper'''
     linespan = (p.linespan(1)[0], p[5].linespan[1])
     p[0] = ast.While(p[3], p[5], linespan=linespan)
 
   def p_loop_statement_2(self, p):
-    '''loop_statement : FOR PAREN_L expression_statement expression_statement expression PAREN_R scopeless_section_wrapper'''
+    '''loop_statement : FOR PAREN_L expression_statement expression_statement expression PAREN_R section_wrapper'''
     linespan = (p.linespan(1)[0], p[7].linespan[1])
     p[0] = ast.For(p[3], p[4], p[5], p[7], linespan=linespan)
 

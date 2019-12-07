@@ -70,6 +70,12 @@ class FlowVisitor:
         return True
     return False
 
+  def is_in_conditional(self):
+    for scope in reversed(self.scopes):
+      if isinstance(scope.node, ast.LoopStatement) or isinstance(scope.node , ast.ConditionalStatement):
+        return True
+    return False
+
   # return to_return, terminated, result, jump_stmt
   def visit_with_linecount(self, node, lazy=False):
     if not node.visited:
@@ -133,18 +139,7 @@ class FlowVisitor:
     node.terminated = True
     return node.terminated, node.result, None
 
-  # def ScopelessSection(self): // covered by BaseSection
-
-  def Section(self, node):
-    if (not node.visited):
-      self.push_scope(SymbolTable(ast.EmptyNode(), self.get_scope()), node.linespan[0])
-    terminated, result, jum_stmt = self.BaseSection(node)
-    if not terminated:
-      return False, None, None
-    self.pop_scope()
-    node.terminated = True
-    node.result = result
-    return node.terminated, node.result, jum_stmt
+  # def Section(self): // covered by BaseSection
 
   # def Declaration(self): // all child node implemented by itself
 
@@ -190,12 +185,16 @@ class FlowVisitor:
     if expr_result or (not node.else_section.is_empty()):
       section = node.then_section if expr_result else node.else_section
       if not section.visited:
+        self.push_scope(SymbolTable(node, self.get_scope()), section.linespan[0])
         self.update_lineno(section.linespan[0])
       to_return, terminated, result, jump_stmt = self.visit_with_linecount(section)
       if to_return:
+        if jump_stmt is not None:
+          self.pop_scope()
         node.terminated = terminated
         node.result = result
         return node.terminated, node.result, jump_stmt
+      self.pop_scope()
       self.line_num -= 1
 
     self.update_lineno(node.linespan[1])
