@@ -15,6 +15,7 @@ VARIABLE_RGEX = re.compile('^[a-zA-Z_$][a-zA-Z_$0-9]*$')
 
 if __name__ == '__main__':
   src_path = sys.argv[1]
+  sys.setrecursionlimit(2**14)
   try:
     parser = Parser(debug=DEBUG)
     ast = parser.run(src_path)
