@@ -7,9 +7,9 @@ from print_visitor import PrintVisitor
 
 DEBUG=True
 
-CLI_NEXT_REGEX = re.compile('^next(?: (.+))?$')
-CLI_PRINT_REGEX = re.compile('^print(?: (.+))?$')
-CLI_TRACE_REGEX = re.compile('^trace (\w+)$')
+CLI_NEXT_REGEX = re.compile('^next(?:\s(.+))?$')
+CLI_PRINT_REGEX = re.compile('^print(?:\s(.+))?$')
+CLI_TRACE_REGEX = re.compile('^trace\s(\w+)$')
 LINE_RGEX = re.compile('^\d+$')
 VARIABLE_RGEX = re.compile('^[a-zA-Z_$][a-zA-Z_$0-9]*$')
 
@@ -48,6 +48,8 @@ if __name__ == '__main__':
             print('Invalid typing of the variable name')
             continue
           flowVisitor.trace(symbol)
+        else:
+          print('Invalid command. use : next / trace / print')
     except:
       if DEBUG:
         exc_info = sys.exc_info()
