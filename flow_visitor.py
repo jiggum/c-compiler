@@ -6,7 +6,8 @@ from function import globalFunctionTable, Function
 
 class FlowVisitor:
   def __init__(self, debug=False):
-    self.scopes = [SymbolTable(ast.EmptyNode(), globalFunctionTable)]
+    self.global_scope = SymbolTable(ast.EmptyNode(), globalFunctionTable)
+    self.scopes = [self.global_scope]
     self.linenos = [1]
     self.line_num = 0
     self.debug = debug
@@ -397,7 +398,7 @@ class FlowVisitor:
     else:
       if not node.initialized:
         node.body = expr_result.body.clone()
-        func_scope = SymbolTable(expr_result)
+        func_scope = SymbolTable(expr_result, self.global_scope)
         self.push_scope(func_scope, node.body.linespan[0])
         for i, parameter in enumerate(expr_result.parameterGroup.childs):
           func_scope.define(parameter.name, parameter.type, parameter.linespan[0], arguments_result[i])
