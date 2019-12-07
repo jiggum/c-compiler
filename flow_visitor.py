@@ -88,11 +88,11 @@ class FlowVisitor:
       self.update_lineno(self.get_lineno() + 1)
     return False, None, None, None
 
-  # def ArrayNode(self):
+  # def ArrayNode(self): // all child node implemented by itself
 
-  # def EmptyNode(self):
+  # def EmptyNode(self): // maybe not necessary
 
-  # def TypeNode(self):
+  # def TypeNode(self): // maybe not necessary
 
   def Const(self, node):
     node.terminated = True
@@ -116,7 +116,7 @@ class FlowVisitor:
     node.terminated = True
     return node.terminated, node.result, None
 
-  # def ScopelessSection(self):
+  # def ScopelessSection(self): // covered by BaseSection
 
   def Section(self, node):
     if (not node.visited):
@@ -126,7 +126,7 @@ class FlowVisitor:
       self.pop_scope()
     return terminated, result, jum_stmt
 
-  # def Declaration(self):
+  # def Declaration(self): // all child node implemented by itself
 
   def FnDeclaration(self, node):
     if not node.visited:
@@ -147,9 +147,9 @@ class FlowVisitor:
     node.terminated = True
     return node.terminated, node.result, None
 
-  # def Declarator(self):
+  # def Declarator(self): // all child node implemented by itself
 
-  # def FnDeclarator(self):
+  # def FnDeclarator(self): // covered by FnDeclaration
 
   def VaDeclarator(self, node):
     scope = self.get_scope()
@@ -177,9 +177,30 @@ class FlowVisitor:
     node.terminated = True
     return node.terminated, node.result, None
 
-  # def LoopStatement(self):
+  # def LoopStatement(self): // all child node implemented by itself
 
-  # def While(self):
+  def While(self, node):
+    if not node.visited:
+      node.save_origin()
+      scope = self.get_scope()
+      self.push_scope(scope, node.linespan[0])
+
+    while True:
+      expr_terminated, expr_result, expr_jump_stmt = self.accept(node.expr)
+      if not expr_terminated:
+        return False, None, None
+      if not expr_result:
+        self.pop_scope()
+        node.terminated = True
+        self.update_lineno(node.linespan[1] + 1)
+        return node.terminated, node.result, None
+
+      to_return, terminated, result, jump_stmt = self.visit_with_linecount(node.section)
+      if to_return:
+        return terminated, result, jump_stmt
+
+      node.load_origin()
+      self.update_lineno(node.linespan[0])
 
   def For(self, node):
     if not node.visited:
@@ -211,7 +232,7 @@ class FlowVisitor:
       node.load_origin()
       self.update_lineno(node.linespan[0])
 
-  # def JumpStatement(self):
+  # def JumpStatement(self): // all child node implemented by itself
 
   def Return(self, node):
     terminated, result, jump_stmt = self.accept(node.expr)
@@ -309,7 +330,20 @@ class FlowVisitor:
     node.terminated = True
     return node.terminated, node.result, None
 
-  # def UnaryOp(self):
+  def UnaryOp(self, node):
+    expr_terminated, expr_result, expr_jump_stmt = self.accept(node.expr)
+    if not expr_terminated:
+      return False, None, None
+
+    if node.op == '+':
+      node.result = expr_result
+    elif node.op == '-':
+      node.result = -expr_result
+    else:
+      raise ValueError
+
+    node.terminated = True
+    return node.terminated, node.result, None
 
   def FnExpression(self, node):
     expr_terminated, expr_result, expr_jump_stmt = self.accept(node.expr)

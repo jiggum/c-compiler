@@ -200,7 +200,13 @@ class LoopStatement(Node):
     return new_node
 
 class While(LoopStatement):
-  pass
+  def save_origin(self):
+    self.origin_expr = self.expr.clone()
+    self.origin_section = self.section.clone()
+
+  def load_origin(self):
+    self.expr = self.origin_expr.clone()
+    self.section = self.origin_section.clone()
 
 class For(LoopStatement):
   def __init__(self, init_stmt, expr, term_stmt, section, linespan=None):
