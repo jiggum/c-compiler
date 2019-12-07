@@ -1,13 +1,16 @@
 int avg(int count, int *value)
 {
-  int i, total, a;
-  total = 0;
+  int i, total, a, c;
+  total = count;
+  total = 4;
   a = 3;
   for(i = 0; i < count; i++)
   {
+    c = total;
     total = a;
+    total = 4;
     total = total;
-    total = total + value[i];
+    total = 3;
   }
 
   return (total / count);

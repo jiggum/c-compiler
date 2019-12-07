@@ -28,6 +28,7 @@ class SymbolTableEntry:
     self.type = type
     self.history = History(symbol)
     self.constant = True
+    self.constant_section = None
     self.used = False
 
   def add_log(self, lineno, value):
@@ -62,11 +63,16 @@ class SymbolTable:
   def trace(self, symbol):
     self.table[symbol].trace()
 
-  def set_constant(self, symbol, constant):
+  def set_constant(self, symbol, constant, constant_section):
     self.table[symbol].constant = constant
+    self.table[symbol].constant_section = constant_section
 
-  def is_constant(self, symbol):
-    return self.table[symbol].constant
+  def is_constant(self, symbol, current_loop_node, check_outer):
+    constant = self.table[symbol].constant
+    constant_section = self.table[symbol].constant_section
+    if check_outer:
+      return constant and (constant_section is not current_loop_node)
+    return constant and (constant_section is current_loop_node)
 
   def set_used(self, symbol):
     self.table[symbol].used = True

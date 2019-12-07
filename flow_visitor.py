@@ -14,6 +14,7 @@ class FlowVisitor:
     self.runtime_error = False
     self.constant_folding = constant_folding
     self.freeze_constant_folding = False
+    self.check_constant_outer = False
 
   def accept(self, node):
     try :
@@ -72,11 +73,11 @@ class FlowVisitor:
         return True
     return False
 
-  def is_in_conditional_section(self):
+  def get_conditional_section(self):
     for scope in reversed(self.scopes):
       if isinstance(scope.node, ast.LoopStatement) or isinstance(scope.node , ast.ConditionalStatement):
-        return True
-    return False
+        return scope.node
+    return None
 
   def is_optimizer(self):
     return self.constant_folding
@@ -152,7 +153,7 @@ class FlowVisitor:
     if not node.visited:
       scope = self.get_scope()
       scope.define(node.name, node.type, node.linespan[0], node)
-      scope.set_constant(node.name, False)
+      scope.set_constant(node.name, False, None)
     if node.name == 'main' or self.is_optimizer():
       func_scope = SymbolTable(node, self.global_scope)
       if not node.visited and node.name != 'main':
@@ -160,7 +161,7 @@ class FlowVisitor:
       if not node.parameterGroup.is_empty():
         for i, parameter in enumerate(node.parameterGroup.childs):
           func_scope.define(parameter.name, parameter.type, parameter.linespan[0])
-          func_scope.set_constant(parameter.name, False)
+          func_scope.set_constant(parameter.name, False, None)
       if not node.body.visited:
         self.update_lineno(node.body.linespan[0])
       terminated, result, jump_stmt = self.accept(node.body)
@@ -218,9 +219,10 @@ class FlowVisitor:
 
   def LoopStatement(self, node):
     iter_count = 0
+    prev_check_constant_outer = self.check_constant_outer
     if self.is_optimizer():
       iter_count = 2
-      self.freeze_constant_folding = True
+      self.check_constant_outer = False
 
     if not node.visited:
       node.save_origin()
@@ -278,12 +280,13 @@ class FlowVisitor:
 
       if self.is_optimizer():
         iter_count -= 1
-        self.freeze_constant_folding = False
+        self.check_constant_outer = True
         if iter_count <= 0:
+          self.check_constant_outer = prev_check_constant_outer
           self.pop_scope()
           node.terminated = True
           return node.terminated, None, None
-
+        node.save_origin()
       node.load_origin()
 
   # def While(self): // covered by LoopStatement
@@ -325,7 +328,12 @@ class FlowVisitor:
     return node.terminated, node.result, None
 
   def BinaryOp(self, node):
+    prev_freeze_constant_folding = self.freeze_constant_folding
+    if node.op == '++' or node.op == '--':
+      self.freeze_constant_folding = True
     left_terminated, left_result, left_jump_stmt = self.accept(node.left)
+    if node.op == '++' or node.op == '--':
+      self.freeze_constant_folding = prev_freeze_constant_folding
     if not left_terminated:
       return False, None, None
     right_terminated, right_result, right_jump_stmt = self.accept(node.right)
@@ -374,13 +382,11 @@ class FlowVisitor:
       scope = self.get_scope()
       if node.left.__class__ is ast.VaExpression:
         scope.add(node.left.name, node.linespan[0], node.result)
-        if scope.is_constant(node.left.name):
-          is_constant = not self.is_in_conditional_section()
-          scope.set_constant(node.left.name, is_constant)
-      elif self.constant_folding and node.left.__class__ is ast.Const:
+        if scope.is_constant(node.left.name, self.get_conditional_section(), self.check_constant_outer):
+          scope.set_constant(node.left.name, True, self.get_conditional_section())
+      elif self.constant_folding and (node.left.__class__ is ast.Const) and (not self.freeze_constant_folding):
         node.replace(ast.Const(node.result, node.linespan))
-
-    if self.constant_folding and not self.freeze_constant_folding:
+    elif self.constant_folding and (not self.freeze_constant_folding):
       if node.left.__class__ is ast.Const and node.right.__class__ is ast.Const:
         linespan = (node.left.linespan[0], node.right.linespan[1])
         node.replace(ast.Const(node.result, linespan))
@@ -397,8 +403,7 @@ class FlowVisitor:
       symbol = node.left.name
       scope.add(symbol, node.linespan[0], right_result)
       node.result = scope.get(symbol)
-      is_constant = (node.right.__class__ is ast.Const) and (not self.is_in_conditional_section())
-      scope.set_constant(symbol, is_constant)
+      scope.set_constant(symbol, node.right.__class__ is ast.Const, self.get_conditional_section())
     elif node.left.__class__ is ast.ArrayExpression:
       prev_freeze_constant_folding = self.freeze_constant_folding
       if self.constant_folding:
@@ -472,7 +477,7 @@ class FlowVisitor:
   def VaExpression(self, node):
     scope = self.get_scope()
     node.result = scope.get(node.name)
-    if self.constant_folding and scope.is_constant(node.name) and (not self.freeze_constant_folding):
+    if self.constant_folding and scope.is_constant(node.name, self.get_conditional_section(), self.check_constant_outer) and (not self.freeze_constant_folding):
       node.replace(ast.Const(node.result, node.linespan))
     node.terminated = True
     return node.terminated, node.result, None
