@@ -27,7 +27,7 @@ class SymbolTableEntry:
     self.symbol = symbol
     self.type = type
     self.history = History(symbol)
-    self.constant = True
+    self.constant = False
     self.constant_section = None
     self.used = False
 
