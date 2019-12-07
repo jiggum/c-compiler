@@ -18,13 +18,14 @@ if __name__ == '__main__':
     try:
       parser = Parser(debug=DEBUG)
       ast = parser.run(src_path)
-      # printVisitor = PrintVisitor()
-      # ast.accept(printVisitor)
-      # print(printVisitor)
+      if DEBUG:
+        printVisitor = PrintVisitor()
+        ast.accept(printVisitor)
+        print(printVisitor)
       flowVisitor = FlowVisitor(debug=DEBUG)
       ast.accept(flowVisitor)
       while True:
-        input_str = input('>>')
+        input_str = input(str(flowVisitor.linenos) + '>>' if DEBUG else '>>')
         if CLI_NEXT_REGEX.search(input_str):
           m = CLI_NEXT_REGEX.match(input_str)
           lines_str = m.groups()[0]
