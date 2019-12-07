@@ -25,7 +25,7 @@ class WriteVisitor:
     return ''
 
   def TypeNode(self, node):
-    return node.get_type()
+    return node.types[-1]
 
   def Const(self, node):
     return str(node.value)
@@ -52,7 +52,7 @@ class WriteVisitor:
     s = '{}{} {}({})\n'.format(self.get_indent_str(), node.type.accept(self), node.name, parameter_str)
     s += '{}{{\n'.format(self.get_indent_str())
     s += node.body.accept(self)
-    s += '{}}}\n'.format(self.get_indent_str())
+    s += '{}}}'.format(self.get_indent_str())
     return s
 
   def VaDeclarationList(self, node):
@@ -62,7 +62,7 @@ class WriteVisitor:
     return s
 
   def Declarator(self, node):
-    return node.name
+    return '{}{}'.format(''.join(node.type.types[:-1]), node.name)
 
   def FnDeclarator(self, node):
     raise ValueError
@@ -80,13 +80,13 @@ class WriteVisitor:
     s = 'if ({})\n'.format(node.expr.accept(self))
     s += '{}{{\n'.format(self.get_indent_str())
     s += node.then_section.accept(self)
-    s += '{}}}\n'.format(self.get_indent_str())
+    s += '{}}}'.format(self.get_indent_str())
 
     if not node.else_section.is_empty():
-      s += '{}else\n'.format(self.get_indent_str(), node.expr.accept(self))
+      s += '\n{}else\n'.format(self.get_indent_str(), node.expr.accept(self))
       s += '{}{{\n'.format(self.get_indent_str())
       s += node.else_section.accept(self)
-      s += '{}}}\n'.format(self.get_indent_str())
+      s += '{}}}'.format(self.get_indent_str())
 
     return s
 
@@ -94,17 +94,17 @@ class WriteVisitor:
     raise ValueError
 
   def While(self, node):
-    s = '{}while ({})\n'.format(self.get_indent_str(), node.expr.accept(self))
-    s += '{}{\n'.format(self.get_indent_str())
+    s = 'while({})\n'.format(node.expr.accept(self))
+    s += '{}{{\n'.format(self.get_indent_str())
     s += node.section.accept(self)
-    s += '{}}\n'.format(self.get_indent_str())
+    s += '{}}}'.format(self.get_indent_str())
     return s
 
   def For(self, node):
-    s = '{}for ({}; {}; {})\n'.format(self.get_indent_str(), node.init_stmt.accept(self), node.expr.accept(self), node.term_stmt.accept(self))
-    s += '{}{\n'.format(self.get_indent_str())
+    s = 'for({}; {}; {})\n'.format(node.init_stmt.accept(self), node.expr.accept(self), node.term_stmt.accept(self))
+    s += '{}{{\n'.format(self.get_indent_str())
     s += node.section.accept(self)
-    s += '{}}\n'.format(self.get_indent_str())
+    s += '{}}}'.format(self.get_indent_str())
     return s
 
   def JumpStatement(self, node):
@@ -126,6 +126,12 @@ class WriteVisitor:
     return ', '.join(argument_list)
 
   def BinaryOp(self, node):
+    if node.op == '++':
+      return '{}++'.format(node.left.accept(self))
+    elif node.op == '--':
+      return '{}--'.format(node.left.accept(self))
+    if node.use_paren:
+      return '({} {} {})'.format(node.left.accept(self), node.op, node.right.accept(self))
     return '{} {} {}'.format(node.left.accept(self), node.op, node.right.accept(self))
 
   # def AssignOp(self, node):

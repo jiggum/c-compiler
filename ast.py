@@ -6,6 +6,7 @@ class Node():
     self.visited = False
     self.terminated = False
     self.result = None
+    self.use_paren = False
 
   def accept(self, visitor):
     return getVisitorFunc(visitor, self.__class__)(self)

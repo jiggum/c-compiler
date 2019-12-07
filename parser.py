@@ -370,6 +370,7 @@ class Parser(Lexer):
     '''variable_simpe_expression : PAREN_L expression PAREN_R'''
     linespan = (p.linespan(1)[0], p.linespan(3)[1])
     p[2].update_linespan(linespan)
+    p[2].use_paren = True
     p[0] = p[2]
 
   def p_const_expression_1(self, p):
