@@ -8,3 +8,6 @@ def getVisitorFunc(visitor, node_class):
       if (visitorFunc != None):
         return visitorFunc
   return None
+
+def props(cls):
+  return [i for i in cls.__dict__.keys() if i[:1] != '_']
