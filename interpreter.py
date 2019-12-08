@@ -5,7 +5,7 @@ from parser import Parser
 from interpreter_visitor import InterpreterVisitor
 from print_visitor import PrintVisitor
 
-DEBUG=True
+DEBUG=False
 
 CLI_NEXT_REGEX = re.compile('^next(?:\s(.+))?$')
 CLI_PRINT_REGEX = re.compile('^print(?:\s(.+))?$')

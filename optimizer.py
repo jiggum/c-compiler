@@ -5,7 +5,7 @@ from write_visitor import WriteVisitor
 from constant_folding_visitor import ConstantFoldingVisitor
 # from print_visitor import PrintVisitor
 
-DEBUG=True
+DEBUG=False
 
 CLI_NEXT_REGEX = re.compile('^next(?:\s(.+))?$')
 CLI_PRINT_REGEX = re.compile('^print(?:\s(.+))?$')
