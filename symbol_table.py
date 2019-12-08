@@ -27,8 +27,6 @@ class History:
     if self.history[-1].assign_node is not None:
       self.history[-1].assign_node.used = used
     if self.history[0].assign_node is not None and used:
-      if self.symbol == 'sum':
-        print('History', self.history[0].assign_node)
       self.history[0].assign_node.used = used
 
 class SymbolTableEntry:
