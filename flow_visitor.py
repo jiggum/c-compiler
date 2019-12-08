@@ -420,6 +420,11 @@ class FlowVisitor:
     else:
       raise ValueError
 
+    if node.result is True:
+      node.result = 1
+    elif node.result is False:
+      node.result = 0
+
     if node.op == '++' or node.op == '--':
       scope = self.get_scope()
       if node.left.__class__ is ast.VaExpression:
