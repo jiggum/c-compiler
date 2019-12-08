@@ -85,3 +85,6 @@ class SymbolTable:
 
   def is_pure_function(self, symbol):
     return self.table[symbol].pure_function
+
+  def get_type(self, symbol):
+    return self.table[symbol].type

@@ -2,6 +2,7 @@ import sys
 import traceback
 from symbol_table import SymbolTable
 import ast
+from type import type_cast
 from function import globalFunctionTable, Function
 
 class InterpreterVisitor:
@@ -355,6 +356,7 @@ class InterpreterVisitor:
     scope = self.get_scope()
     if node.left.__class__ is ast.VaExpression:
       symbol = node.left.name
+      right_result = type_cast(scope.get_type(symbol), right_result)
       scope.add(symbol, node.linespan[0], right_result)
       node.result = scope.get(symbol)
     elif node.left.__class__ is ast.ArrayExpression:

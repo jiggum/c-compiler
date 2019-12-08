@@ -4,8 +4,9 @@ from symbol_table import SymbolTable
 import codecs
 
 class Function:
-  def __init__(self , function):
+  def __init__(self , function, name):
     self.function = function
+    self.name = name
 
   def run(self, *args):
     return self.function(*args)
@@ -15,5 +16,5 @@ def printf(format, *args):
   return sys.stdout.write(format_ % args)
 
 globalFunctionTable = SymbolTable(EmptyNode())
-globalFunctionTable.define('printf', TypeNode(), 0, Function(printf))
+globalFunctionTable.define('printf', TypeNode(), 0, Function(printf, 'printf'))
 globalFunctionTable.set_pure_function('printf', False)

@@ -2,6 +2,7 @@ import sys
 import traceback
 from symbol_table import SymbolTable
 import ast
+from type import type_cast
 from function import globalFunctionTable, Function
 
 class ConstantFoldingVisitor:
@@ -316,6 +317,8 @@ class ConstantFoldingVisitor:
     scope = self.get_scope()
     if node.left.__class__ is ast.VaExpression:
       symbol = node.left.name
+      if right_result is not None:
+        right_result = type_cast(scope.get_type(symbol), right_result)
       scope.add(symbol, node.linespan[0], right_result)
       node.result = scope.get(symbol)
       self.set_constant(symbol, node.right.__class__ is ast.Const)
