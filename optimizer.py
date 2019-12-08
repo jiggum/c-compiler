@@ -2,7 +2,7 @@ import sys
 import re
 from parser import Parser
 from write_visitor import WriteVisitor
-from flow_visitor import FlowVisitor
+from constant_folding_visitor import ConstantFoldingVisitor
 
 DEBUG=True
 
@@ -17,8 +17,8 @@ if __name__ == '__main__':
   target_path = sys.argv[2]
   parser = Parser(debug=DEBUG)
   ast = parser.run(src_path)
-  flowVisitor = FlowVisitor(debug=DEBUG, constant_folding=True)
-  ast.accept(flowVisitor)
+  constantFoldingVisitor = ConstantFoldingVisitor(debug=DEBUG)
+  ast.accept(constantFoldingVisitor)
   writeVisitor = WriteVisitor()
   s = ast.accept(writeVisitor)
   f = open(target_path, 'w')

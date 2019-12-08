@@ -16,3 +16,4 @@ def printf(format, *args):
 
 globalFunctionTable = SymbolTable(EmptyNode())
 globalFunctionTable.define('printf', TypeNode(), 0, Function(printf))
+globalFunctionTable.set_pure_function('printf', False)

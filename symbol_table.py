@@ -30,6 +30,7 @@ class SymbolTableEntry:
     self.constant = False
     self.constant_section = None
     self.used = False
+    self.pure_function = True
 
   def add_log(self, lineno, value):
     self.history.add(lineno, value)
@@ -78,3 +79,9 @@ class SymbolTable:
 
   def is_used(self, symbol):
     return self.table[symbol].used
+
+  def set_pure_function(self, symbol, pure):
+    self.table[symbol].pure_function = pure
+
+  def is_pure_function(self, symbol):
+    return self.table[symbol].pure_function

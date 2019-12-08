@@ -353,22 +353,26 @@ class ConstantFoldingVisitor:
   def FnExpression(self, node):
     expr_result, expr_jump_stmt = self.accept(node.expr)
     arguments_result, arguments_jump_stmt = self.accept(node.arguments)
+    if all(argument.__class__ is ast.Const for argument in node.arguments.childs):
+      if expr_result.__class__ is Function:
+        node.result = expr_result.run(*arguments_result)
+      else:
+        if not node.initialized:
+          node.body = expr_result.body.clone()
+          func_scope = SymbolTable(expr_result, self.global_scope)
+          self.push_scope(func_scope)
+          for i, parameter in enumerate(expr_result.parameterGroup.childs):
+            func_scope.define(parameter.name, parameter.type, parameter.linespan[0], arguments_result[i])
+          node.initialized = True
 
-    if expr_result.__class__ is Function:
-      node.result = expr_result.run(*arguments_result)
+        body_result, body_jump_stmt = self.accept(node.body)
+        self.pop_scope()
+        node.result = body_result
+      if self.get_scope().is_pure_function(expr_result.name):
+        self.replace(node, ast.Const(node.result, node.linespan))
+      return node.result, None
     else:
-      if not node.initialized:
-        node.body = expr_result.body.clone()
-        func_scope = SymbolTable(expr_result, self.global_scope)
-        self.push_scope(func_scope)
-        for i, parameter in enumerate(expr_result.parameterGroup.childs):
-          func_scope.define(parameter.name, parameter.type, parameter.linespan[0], arguments_result[i])
-        node.initialized = True
-
-      body_result, body_jump_stmt = self.accept(node.body)
-      self.pop_scope()
-      node.result = body_result
-    return node.result, None
+      return None, None
 
   def VaExpression(self, node):
     scope = self.get_scope()
