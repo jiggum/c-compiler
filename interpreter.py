@@ -2,7 +2,7 @@ import sys
 import re
 import traceback
 from parser import Parser
-from flow_visitor import FlowVisitor
+from interpreter_visitor import InterpreterVisitor
 from print_visitor import PrintVisitor
 
 DEBUG=True
@@ -23,7 +23,7 @@ if __name__ == '__main__':
       printVisitor = PrintVisitor()
       ast.accept(printVisitor)
       print(printVisitor)
-    flowVisitor = FlowVisitor(debug=DEBUG)
+    flowVisitor = InterpreterVisitor(debug=DEBUG)
     ast.accept(flowVisitor)
     while True:
       input_str = input(str(flowVisitor.linenos) + '>>' if DEBUG else '>>')
