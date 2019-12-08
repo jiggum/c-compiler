@@ -5,6 +5,10 @@ int sum(int num)
   {
     result = num + sum(num-1);
   }
+  if (num == 1)
+  {
+    result = 1;
+  }
 
   printf("%d added\n", num);
   return result;
