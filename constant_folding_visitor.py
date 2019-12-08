@@ -6,7 +6,7 @@ from type import type_cast
 from function import globalFunctionTable, Function
 
 class ConstantFoldingVisitor:
-  def __init__(self, debug=False):
+  def __init__(self, debug=False, mark_used=False):
     self.global_scope = SymbolTable(ast.EmptyNode(), globalFunctionTable)
     self.scopes = [self.global_scope]
     self.debug = debug
@@ -15,10 +15,12 @@ class ConstantFoldingVisitor:
     self.freeze_set_constant = False
     self.check_constant_outer = False
     self.check_constant_self = False
+    self.mark_used = mark_used
 
   def accept(self, node):
     try :
       result, jum_stmt = node.accept(self)
+      node.visited = True
       return result, jum_stmt
     except:
       if not self.runtime_error:
@@ -92,6 +94,11 @@ class ConstantFoldingVisitor:
     if not self.freeze_constant_folding:
         base_node.replace(target_node)
 
+  def set_used(self, symbol):
+    if not self.mark_used:
+      return
+    self.get_scope().set_used(symbol)
+
   # def ArrayNode(self): // all child node implemented by itself
 
   # def EmptyNode(self): // maybe not necessary
@@ -123,17 +130,19 @@ class ConstantFoldingVisitor:
 
   def FnDeclaration(self, node):
     scope = self.get_scope()
-    scope.define(node.name, node.type, node.linespan[0], node)
+    scope.define(node.name, node.type, node.linespan[0], node, node)
 
     func_scope = SymbolTable(node, self.global_scope)
     if node.name != 'main':
       self.push_scope(func_scope)
     if not node.parameterGroup.is_empty():
       for i, parameter in enumerate(node.parameterGroup.childs):
-        func_scope.define(parameter.name, parameter.type, parameter.linespan[0])
+        func_scope.define(parameter.name, parameter.type, parameter.linespan[0], None)
     self.accept(node.body)
     if node.name != 'main':
       self.pop_scope()
+    else:
+      self.set_used('main')
     return node.result, None
 
   def VaDeclarationList(self, node):
@@ -147,12 +156,12 @@ class ConstantFoldingVisitor:
 
   def VaDeclarator(self, node):
     scope = self.get_scope()
-    scope.define(node.name, node.type, node.linespan[0], None)
+    scope.define(node.name, node.type, node.linespan[0], None, node)
     return None, None
 
   def ArrayDeclarator(self, node):
     scope = self.get_scope()
-    scope.define(node.name, node.type, node.linespan[0], [None] * node.size)
+    scope.define(node.name, node.type, node.linespan[0], [None] * node.size, node)
     return None, None
 
   # def ParameterGroup(self): // not necessary
@@ -302,7 +311,7 @@ class ConstantFoldingVisitor:
     if node.op == '++' or node.op == '--':
       scope = self.get_scope()
       if node.left.__class__ is ast.VaExpression:
-        scope.add(node.left.name, node.linespan[0], node.result)
+        scope.add(node.left.name, node.linespan[0], node.result, node)
         self.set_constant(node.left.name, self.is_constant(node.left.name))
       elif (node.left.__class__ is ast.Const):
         self.replace(node, ast.Const(node.result, node.linespan))
@@ -319,7 +328,7 @@ class ConstantFoldingVisitor:
       symbol = node.left.name
       if right_result is not None:
         right_result = type_cast(scope.get_type(symbol), right_result)
-      scope.add(symbol, node.linespan[0], right_result)
+      scope.add(symbol, node.linespan[0], right_result, node)
       node.result = scope.get(symbol)
       self.set_constant(symbol, node.right.__class__ is ast.Const)
     elif node.left.__class__ is ast.ArrayExpression:
@@ -365,16 +374,19 @@ class ConstantFoldingVisitor:
           func_scope = SymbolTable(expr_result, self.global_scope)
           self.push_scope(func_scope)
           for i, parameter in enumerate(expr_result.parameterGroup.childs):
-            func_scope.define(parameter.name, parameter.type, parameter.linespan[0], arguments_result[i])
+            func_scope.define(parameter.name, parameter.type, parameter.linespan[0], arguments_result[i], None)
           node.initialized = True
 
         body_result, body_jump_stmt = self.accept(node.body)
         self.pop_scope()
         node.result = body_result
-      if self.get_scope().is_pure_function(expr_result.name):
+      if self.get_scope().is_pure_function(expr_result.name) and node.result is not None:
         self.replace(node, ast.Const(node.result, node.linespan))
+      else:
+        self.set_used(expr_result.name)
       return node.result, None
     else:
+      self.set_used(expr_result.name)
       return None, None
 
   def VaExpression(self, node):
@@ -382,6 +394,8 @@ class ConstantFoldingVisitor:
     node.result = scope.get(node.name)
     if self.is_constant(node.name):
       self.replace(node, ast.Const(node.result, node.linespan))
+    else:
+      self.set_used(node.name)
     return node.result, None
 
   def ArrayExpression(self, node):

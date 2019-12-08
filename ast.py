@@ -8,6 +8,8 @@ class Node():
     self.result = None
     self.use_paren = False
     self.parent = None
+    self.used = True
+    self.default_reachable = False
 
   def accept(self, visitor):
     return getVisitorFunc(visitor, self.__class__)(self)
@@ -42,6 +44,9 @@ class Node():
           node.parent = self.parent
           break
 
+  def is_rechable(self):
+    return self.default_reachable or self.visited or self.used
+
 class ArrayNode(Node):
   def __init__(self, child=None, linespan=None):
     super().__init__(linespan=linespan)
@@ -73,6 +78,7 @@ class TypeNode(Node):
     self.types = []
     if (type is not None):
       self.add_type(type)
+    self.default_reachable = True
 
   def get_type(self):
     if (len(self.types) > 0):
@@ -101,7 +107,9 @@ class BaseSection(ArrayNode):
     return self.linespan[0]
 
 class RootSection(BaseSection):
-  pass
+  def __init__(self, child=None, linespan=None):
+    super().__init__(child=child, linespan=linespan)
+    self.default_reachable = True
 
 class Section(BaseSection):
   pass
@@ -114,6 +122,7 @@ class Declaration(Node):
     self.name = declarator.name
     self.declarator = declarator
     self.declarator.parent = self
+    self.default_reachable = True
 
   def clone(self):
     return self.__class__(self.declarator.clone(), linespan=self.linespan)
@@ -140,6 +149,7 @@ class Declarator(Node):
     super().__init__(linespan=linespan)
     self.type = None
     self.name = name
+    self.default_reachable = True
 
   def add_type(self, typeNode):
     if self.type is None:
@@ -181,7 +191,9 @@ class ArrayDeclarator(Declarator):
     return new_node
 
 class ParameterGroup(ArrayNode):
-  pass
+  def __init__(self, child=None, linespan=None):
+    super().__init__(child=child, linespan=linespan)
+    self.default_reachable = True
 
 class ConditionalStatement(Node):
   def __init__(self, expr, then_section, else_section, linespan=None):

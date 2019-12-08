@@ -13,7 +13,7 @@ class PrintVisitor:
     self._indent -= 1
 
   def save_s(self, node, infos={}):
-    self.s += "    " * self._indent + str(node.linespan) + ':' + node.__class__.__name__ + infos.__str__() + '\n'
+    self.s += "    " * self._indent + str(node.linespan) + ':' + node.__class__.__name__ + infos.__str__() + str(node) + '[rechable:' + str(node.is_rechable()) + ', used:' + str(node.used) + ']\n'
 
   def Node(self, node):
     self.save_s(node)

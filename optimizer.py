@@ -3,6 +3,7 @@ import re
 from parser import Parser
 from write_visitor import WriteVisitor
 from constant_folding_visitor import ConstantFoldingVisitor
+# from print_visitor import PrintVisitor
 
 DEBUG=True
 
@@ -17,9 +18,12 @@ if __name__ == '__main__':
   target_path = sys.argv[2]
   parser = Parser(debug=DEBUG)
   ast = parser.run(src_path)
-  constantFoldingVisitor = ConstantFoldingVisitor(debug=DEBUG)
+  constantFoldingVisitor = ConstantFoldingVisitor(debug=DEBUG, mark_used=True)
   ast.accept(constantFoldingVisitor)
-  writeVisitor = WriteVisitor()
+  # printVisitor = PrintVisitor()
+  # ast.accept(printVisitor)
+  # print(printVisitor)
+  writeVisitor = WriteVisitor(dead_code_elimination=True)
   s = ast.accept(writeVisitor)
   f = open(target_path, 'w')
   f.write(s)
