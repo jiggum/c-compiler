@@ -29,5 +29,6 @@ int main(void)
   {
     i = sum;
   }
-  sum = i;
+  count = sum;
+  printf("%d\n", count);
 }
