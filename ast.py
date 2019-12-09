@@ -103,6 +103,10 @@ class Const(Node):
     return self.__class__(self.value, linespan=self.linespan)
 
 class BaseSection(ArrayNode):
+  def __init__(self, child=None, linespan=None):
+    super().__init__(child=child, linespan=linespan)
+    self.scope_pushed = False
+
   def get_excutable_lineno(self):
     return self.linespan[0]
 

@@ -183,9 +183,10 @@ class InterpreterVisitor:
       return False, None, None
     if expr_result or (not node.else_section.is_empty()):
       section = node.then_section if expr_result else node.else_section
-      if not section.visited:
+      if not section.scope_pushed:
         self.push_scope(SymbolTable(node, self.get_scope()), section.linespan[0])
         self.update_lineno(section.linespan[0])
+        section.scope_pushed = True
       to_return, terminated, result, jump_stmt = self.visit_with_linecount(section)
       if to_return:
         if jump_stmt is not None:
