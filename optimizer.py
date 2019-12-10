@@ -20,6 +20,7 @@ if __name__ == '__main__':
   ast = parser.run(src_path)
   constantFoldingVisitor = ConstantFoldingVisitor(debug=DEBUG, mark_used=True)
   ast.accept(constantFoldingVisitor)
+  ast.accept(constantFoldingVisitor)
   # printVisitor = PrintVisitor()
   # ast.accept(printVisitor)
   # print(printVisitor)
