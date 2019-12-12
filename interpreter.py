@@ -1,32 +1,36 @@
 import sys
 import re
 import traceback
+import argparse
 from parser import Parser
 from interpreter_visitor import InterpreterVisitor
 from print_visitor import PrintVisitor
 
-DEBUG=False
-
 CLI_NEXT_REGEX = re.compile('^next(?:\s(.+))?$')
 CLI_PRINT_REGEX = re.compile('^print(?:\s(.+))?$')
-CLI_TRACE_REGEX = re.compile('^trace\s(\w+)$')
+CLI_TRACE_REGEX = re.compile('^trace(?:\s(\w+))?$')
+CLI_EXIT_REGEX = re.compile('^exit$')
 LINE_RGEX = re.compile('^\d+$')
 VARIABLE_RGEX = re.compile('^[a-zA-Z_$][a-zA-Z_$0-9]*$')
 
 if __name__ == '__main__':
-  src_path = sys.argv[1]
-  sys.setrecursionlimit(2**14)
+  parser = argparse.ArgumentParser(description='AST optimizer')
+  parser.add_argument('input', type=str, metavar='Input File', help='Input .c file path')
+  parser.add_argument('--debug', action='store_true')
+  args = parser.parse_args()
+
+  sys.setrecursionlimit(2**16)
   try:
-    parser = Parser(debug=DEBUG)
-    ast = parser.run(src_path)
-    if DEBUG:
+    parser = Parser(debug=args.debug)
+    ast = parser.run(args.input)
+    if args.debug:
       printVisitor = PrintVisitor()
       ast.accept(printVisitor)
       print(printVisitor)
-    flowVisitor = InterpreterVisitor(debug=DEBUG)
+    flowVisitor = InterpreterVisitor(debug=args.debug)
     ast.accept(flowVisitor)
     while True:
-      input_str = input(str(flowVisitor.linenos) + '>>' if DEBUG else '>>')
+      input_str = input(str(flowVisitor.linenos) + '>>' if args.debug else '>>')
       if CLI_NEXT_REGEX.search(input_str):
         m = CLI_NEXT_REGEX.match(input_str)
         lines_str = m.groups()[0]
@@ -50,10 +54,12 @@ if __name__ == '__main__':
           print('Invalid typing of the variable name')
           continue
         flowVisitor.trace(symbol)
+      elif CLI_EXIT_REGEX.search(input_str):
+        break
       else:
-        print('Invalid command. use : next / trace / print')
+        print('Invalid command. use : next / next [number] / trace [symbol] / print [symbol] / exit')
   except:
-    if DEBUG:
+    if args.debug:
       exc_info = sys.exc_info()
       traceback.print_exception(*exc_info)
       del exc_info

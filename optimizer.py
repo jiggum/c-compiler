@@ -1,11 +1,9 @@
-import sys
 import re
+import argparse
 from parser import Parser
 from write_visitor import WriteVisitor
 from constant_folding_visitor import ConstantFoldingVisitor
-# from print_visitor import PrintVisitor
-
-DEBUG=False
+from print_visitor import PrintVisitor
 
 CLI_NEXT_REGEX = re.compile('^next(?:\s(.+))?$')
 CLI_PRINT_REGEX = re.compile('^print(?:\s(.+))?$')
@@ -14,16 +12,23 @@ LINE_RGEX = re.compile('^\d+$')
 VARIABLE_RGEX = re.compile('^[a-zA-Z_$][a-zA-Z_$0-9]*$')
 
 if __name__ == '__main__':
-  src_path = sys.argv[1]
-  target_path = sys.argv[2]
-  parser = Parser(debug=DEBUG)
+  parser = argparse.ArgumentParser(description='AST optimizer')
+  parser.add_argument('input', type=str, metavar='Input File', help='Input .c file path')
+  parser.add_argument('output', type=str, metavar='Output File', help='Output .c file path')
+  parser.add_argument('--debug', action='store_true')
+  args = parser.parse_args()
+
+  src_path = args.input
+  target_path = args.output
+  parser = Parser(debug=args.debug)
   ast = parser.run(src_path)
-  constantFoldingVisitor = ConstantFoldingVisitor(debug=DEBUG, mark_used=True)
+  if args.debug:
+    printVisitor = PrintVisitor()
+    ast.accept(printVisitor)
+    print(printVisitor)
+  constantFoldingVisitor = ConstantFoldingVisitor(debug=args.debug, mark_used=True)
   ast.accept(constantFoldingVisitor)
   ast.accept(constantFoldingVisitor)
-  # printVisitor = PrintVisitor()
-  # ast.accept(printVisitor)
-  # print(printVisitor)
   writeVisitor = WriteVisitor(dead_code_elimination=True)
   s = ast.accept(writeVisitor)
   f = open(target_path, 'w')
