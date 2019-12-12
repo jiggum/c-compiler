@@ -1,3 +1,8 @@
+float average(int a, int b)
+{
+  return (a + b) / 2;
+}
+
 int sum(int a, int b)
 {
   return a + b;
@@ -5,9 +10,10 @@ int sum(int a, int b)
 
 int main(void)
 {
-  int student_number, a, b;
+  int a, b;
 
   a = 4;
   b = 2;
-  student_number = sum(a, b);
+  printf("%d\n", sum(a, b));
 }
+
