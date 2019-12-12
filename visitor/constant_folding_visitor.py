@@ -1,9 +1,9 @@
 import sys
 import traceback
-from symbol_table import SymbolTable
-import ast
-from type import type_cast
-from function import globalFunctionTable, Function
+from model.symbol_table import SymbolTable
+from model import ast
+from util.type import type_cast
+from util.function import globalFunctionTable, Function
 
 class ConstantFoldingVisitor:
   def __init__(self, debug=False, mark_used=False):

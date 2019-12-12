@@ -1,9 +1,9 @@
 import re
 import argparse
-from parser import Parser
-from write_visitor import WriteVisitor
-from constant_folding_visitor import ConstantFoldingVisitor
-from print_visitor import PrintVisitor
+from generator.parser import Parser
+from visitor.write_visitor import WriteVisitor
+from visitor.constant_folding_visitor import ConstantFoldingVisitor
+from visitor.print_visitor import PrintVisitor
 
 CLI_NEXT_REGEX = re.compile('^next(?:\s(.+))?$')
 CLI_PRINT_REGEX = re.compile('^print(?:\s(.+))?$')

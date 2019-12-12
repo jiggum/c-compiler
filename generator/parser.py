@@ -1,7 +1,8 @@
 import os
 import ply.yacc as yacc
-from lexer import Lexer
-import ast
+from generator.lexer import Lexer
+from model import ast
+
 
 class Parser(Lexer):
   def __init__(self, **kw):

@@ -1,4 +1,4 @@
-from helper import getVisitorFunc, props
+from util.helper import getVisitorFunc, props
 
 class Node():
   def __init__(self, linespan=None):

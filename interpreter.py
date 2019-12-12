@@ -2,9 +2,9 @@ import sys
 import re
 import traceback
 import argparse
-from parser import Parser
-from interpreter_visitor import InterpreterVisitor
-from print_visitor import PrintVisitor
+from generator.parser import Parser
+from visitor.interpreter_visitor import InterpreterVisitor
+from visitor.print_visitor import PrintVisitor
 
 CLI_NEXT_REGEX = re.compile('^next(?:\s(.+))?$')
 CLI_PRINT_REGEX = re.compile('^print(?:\s(.+))?$')

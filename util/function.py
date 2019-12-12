@@ -1,6 +1,6 @@
 import sys
-from ast import TypeNode, EmptyNode
-from symbol_table import SymbolTable
+from model.ast import TypeNode, EmptyNode
+from model.symbol_table import SymbolTable
 import codecs
 
 class Function:
