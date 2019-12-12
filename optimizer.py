@@ -13,8 +13,8 @@ VARIABLE_RGEX = re.compile('^[a-zA-Z_$][a-zA-Z_$0-9]*$')
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='AST optimizer')
-  parser.add_argument('input', type=str, metavar='Input File', help='Input .c file path')
-  parser.add_argument('output', type=str, metavar='Output File', help='Output .c file path')
+  parser.add_argument('input', type=str, metavar='Input_File', help='Input .c file path')
+  parser.add_argument('output', type=str, metavar='Output_File', help='Output .c file path')
   parser.add_argument('--debug', action='store_true')
   args = parser.parse_args()
 

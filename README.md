@@ -15,13 +15,10 @@ Simple c compiler & interpreter written in python
 
 ## Interpreter
 ### Usage
-`$ python interpreter.py [input .c file path]`
+`$ python interpreter.py [-h] [--debug] Input_File`
 
 #### Example
 `$ python interpreter.py ./sample/base.c`
-
-#### Debugging Mode
-`$ python interpreter.py --debug ./sample/base.c`
 
 ### CLI
 
@@ -46,12 +43,9 @@ Simple c compiler & interpreter written in python
 ## Optimizer
 > Write optimized .c file
 ### Usage
-`$ python interpreter.py [input .c file path]`
+`$ python optimizer.py [-h] [--debug] Input_File Output_File`
 
 #### Example
-`$ python optimizer.py ./sample/constant_folding.c ./sample/constant_folding_o.c`
-
-#### Debugging Mode
 `$ python optimizer.py --debug ./sample/constant_folding.c ./sample/constant_folding_o.c`
 
 ## Features
